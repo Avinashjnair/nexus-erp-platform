@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="NEXUS ERP — High-performance industrial project intelligence platform." />
+  <meta name="theme-color" content="#0a0c10" />
+  <title>NEXUS ERP — Project Intelligence Platform</title>
+  
+  <script>
+    // Critical Debugging
+    window.onerror = function(msg, url, line) {
+      console.error('NEXUS ERR:', msg, url, line);
+    };
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="src/styles/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⬡</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="login-screen">
+      <div class="login-bg"><div class="login-grid"></div></div>
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="login-logo-icon">⬡</div>
+          <div>
+            <div class="login-logo-text">NEXUS ERP</div>
+            <div class="login-logo-sub">Project Intelligence Platform</div>
+          </div>
+        </div>
+        <h1 class="login-title">Sign in to<br>your workspace</h1>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-input" type="email" value="admin@nexus.ae">
+        </div>
+        <div class="login-roles">
+          <div class="login-roles-label">Quick access — select role:</div>
+          <div class="role-pills">
+            <button class="role-pill active" onclick="setRole('management',this)">Management</button>
+            <button class="role-pill" onclick="setRole('marketing',this)">Marketing</button>
+            <button class="role-pill" onclick="setRole('purchase',this)">Purchase</button>
+            <button class="role-pill" onclick="setRole('qaqc',this)">QA/QC</button>
+          </div>
+        </div>
+        <button class="btn btn-primary login-btn" onclick="doLogin()">
+          <span>Enter Platform</span>
+          <span class="btn-arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app" class="main-app hidden">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="sb-logo"><div class="sb-logo-icon">⬡</div><div><div class="sb-logo-name">NEXUS ERP</div></div></div>
+        </div>
+        <div class="sb-project-selector">
+          <select class="sb-proj-select" id="active-project-select" onchange="changeProject(this.value)">
+            <option value="p1">ADNOC Offshore Platform A</option>
+            <option value="p2">Ruwais Industrial Expansion</option>
+          </select>
+        </div>
+        <nav class="sb-nav">
+          <a class="sb-link active" data-panel="management" onclick="showPanel('management',this)"><span class="sb-text">Management</span></a>
+          <a class="sb-link" data-panel="qaqc" onclick="showPanel('qaqc',this)"><span class="sb-text">QA / QC</span></a>
+        </nav>
+        <div class="sb-user">
+          <div class="sb-avatar" id="sb-avatar">AM</div>
+          <div class="sb-user-name" id="sb-user-name">...</div>
+          <div class="sb-user-role" id="sb-user-role">...</div>
+          <button onclick="location.reload()">⏻</button>
+        </div>
+      </aside>
+
+      <div class="main-content">
+        <header class="topbar">
+          <div id="topbar-breadcrumb">...</div>
+          <div id="topbar-title" style="font-weight:700">...</div>
+          <div id="topbar-time">00:00:00</div>
+        </header>
+        <main class="panels-container" id="panels-container"></main>
+      </div>
+    </div>
+  </div>
+
+  <div id="modals-container"></div>
+
+  <!-- SCRIPTS -->
+  <script src="src/data/store.js"></script>
+  <script src="src/utils/core.js"></script>
+  <script src="src/components/modals.js"></script>
+  <script src="src/pages/management.js"></script>
+  <script src="src/pages/qaqc.js"></script>
+  <script src="src/pages/purchase.js"></script>
+  <script src="src/pages/production.js"></script>
+  <script src="src/pages/store.js"></script>
+  <script src="src/pages/marketing.js"></script>
+  <script src="src/pages/initiate.js"></script>
+  <script src="src/pages/workflow.js"></script>
+  <script src="src/pages/reports.js"></script>
+  <script src="src/components/app.js"></script>
+</body>
+</html>
