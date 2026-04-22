@@ -1,10 +1,14 @@
 import React from 'react';
+import StatCard from '../components/ui/StatCard';
+import ProgressBar from '../components/ui/ProgressBar';
+import Badge from '../components/ui/Badge';
+import Table from '../components/ui/Table';
 import { useNexusStore } from '../store/useNexusStore';
-import { formatCurrency, getStatusBadgeClass, getStatusLabel } from '../utils/formatters';
-import { Folder, DollarSign, Clock, AlertTriangle, Plus } from 'lucide-react';
+import { ShoppingCart, ClipboardCheck, Folder, DollarSign, Clock, AlertTriangle, Plus } from 'lucide-react';
+import { formatCurrency, getStatusLabel } from '../utils/formatters';
 
 const ManagementPage: React.FC = () => {
-  const { projects, purchaseRequests, ncrs, activityLog } = useNexusStore();
+  const { projects, purchaseRequests, ncrs, activityLog, openModal } = useNexusStore();
 
   const totalValue = projects.reduce((s, p) => s + p.contractValue, 0);
   const pendingPRs = purchaseRequests.filter(p => p.status === 'pending').length;
@@ -12,6 +16,18 @@ const ManagementPage: React.FC = () => {
 
   return (
     <>
+      {/* QUICK ACTIONS */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <button className="btn btn-primary" onClick={() => openModal('PR_MODAL')}>
+          <ShoppingCart size={14} />
+          Raise Purchase Request
+        </button>
+        <button className="btn btn-ghost" onClick={() => openModal('IR_MODAL')}>
+          <ClipboardCheck size={14} />
+          Request Inspection (IR)
+        </button>
+      </div>
+
       {/* AI SUMMARY WIDGET */}
       <div className="card gap-b ai-summary-card" style={{ background: 'linear-gradient(135deg, var(--bg2), #1a1e26)', border: '1px solid var(--accent-dim)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
@@ -40,30 +56,38 @@ const ManagementPage: React.FC = () => {
 
       {/* STATS */}
       <div className="stats-grid gap-b">
-        <div className="stat-card" style={{ '--accent-color': 'var(--accent)' } as any}>
-          <div className="stat-icon" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}><Folder size={18} /></div>
-          <div className="stat-label">Active Projects</div>
-          <div className="stat-value">{projects.length}</div>
-          <div className="stat-delta delta-up">↑ 1 initiated this month</div>
-        </div>
-        <div className="stat-card" style={{ '--accent-color': 'var(--green)' } as any}>
-          <div className="stat-icon" style={{ background: 'var(--green-dim)', color: 'var(--green)' }}><DollarSign size={18} /></div>
-          <div className="stat-label">Total Contract Value</div>
-          <div className="stat-value">{formatCurrency(totalValue)}</div>
-          <div className="stat-delta delta-up">Across all projects</div>
-        </div>
-        <div className="stat-card" style={{ '--accent-color': 'var(--orange)' } as any}>
-          <div className="stat-icon" style={{ background: 'var(--orange-dim)', color: 'var(--orange)' }}><Clock size={18} /></div>
-          <div className="stat-label">Pending Approvals</div>
-          <div className="stat-value">{pendingPRs + 1}</div>
-          <div className="stat-delta delta-dn">{pendingPRs} PRs · 1 IR awaiting</div>
-        </div>
-        <div className="stat-card" style={{ '--accent-color': 'var(--red)' } as any}>
-          <div className="stat-icon" style={{ background: 'var(--red-dim)', color: 'var(--red)' }}><AlertTriangle size={18} /></div>
-          <div className="stat-label">Open NCRs</div>
-          <div className="stat-value">{openNCRs}</div>
-          <div className="stat-delta delta-dn">{openNCRs > 0 ? 'Requires immediate attention' : 'All clear'}</div>
-        </div>
+        <StatCard 
+          label="Active Projects" 
+          value={projects.length} 
+          delta="↑ 1 initiated this month" 
+          deltaType="up"
+          icon={<Folder size={18} />}
+          accentColor="var(--accent)"
+        />
+        <StatCard 
+          label="Total Contract Value" 
+          value={formatCurrency(totalValue)} 
+          delta="Across all projects" 
+          deltaType="neutral"
+          icon={<DollarSign size={18} />}
+          accentColor="var(--green)"
+        />
+        <StatCard 
+          label="Pending Approvals" 
+          value={pendingPRs + 1} 
+          delta={`${pendingPRs} PRs · 1 IR awaiting`} 
+          deltaType="down"
+          icon={<Clock size={18} />}
+          accentColor="var(--orange)"
+        />
+        <StatCard 
+          label="Open NCRs" 
+          value={openNCRs} 
+          delta={openNCRs > 0 ? 'Requires immediate attention' : 'All clear'} 
+          deltaType={openNCRs > 0 ? 'down' : 'neutral'}
+          icon={<AlertTriangle size={18} />}
+          accentColor="var(--red)"
+        />
       </div>
 
       {/* PROJECT PROGRESS + ACTIVITY FEED */}
@@ -85,12 +109,15 @@ const ManagementPage: React.FC = () => {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: 'var(--accent)' }}>{p.progress}%</div>
-                  <span className={`badge ${getStatusBadgeClass(p.status)}`}>{getStatusLabel(p.status)}</span>
+                  <Badge variant={p.status === 'on-track' ? 'success' : p.status === 'delayed' ? 'warning' : 'info'}>
+                    {getStatusLabel(p.status)}
+                  </Badge>
                 </div>
               </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${p.progress}%`, background: p.status === 'on-track' ? 'var(--green)' : p.status === 'delayed' ? 'var(--amber)' : 'var(--teal)' }}></div>
-              </div>
+              <ProgressBar 
+                progress={p.progress} 
+                color={p.status === 'on-track' ? 'var(--green)' : p.status === 'delayed' ? 'var(--amber)' : 'var(--teal)'} 
+              />
             </div>
           ))}
         </div>
@@ -128,50 +155,36 @@ const ManagementPage: React.FC = () => {
             <div className="card-sub">Real-time status of divisional backlogs</div>
           </div>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Department</th>
-                <th>Open Tasks</th>
-                <th>Critical Items</th>
-                <th>Load Factor</th>
-                <th>Current Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="td-main">Marketing & Tendering</td>
-                <td>6 Bids</td>
-                <td>0</td>
-                <td><div className="progress-bar" style={{ width: '80px' }}><div className="progress-fill" style={{ width: '60%', background: 'var(--blue)' }}></div></div></td>
-                <td><span className={`badge ${getStatusBadgeClass('on-track')}`}>On Track</span></td>
-              </tr>
-              <tr>
-                <td className="td-main">Procurement</td>
-                <td>14 Orders</td>
-                <td>{purchaseRequests.filter(p => p.priority === 'urgent').length} urgent</td>
-                <td><div className="progress-bar" style={{ width: '80px' }}><div className="progress-fill" style={{ width: '85%', background: 'var(--amber)' }}></div></div></td>
-                <td><span className="badge badge-amber">High Priority</span></td>
-              </tr>
-              <tr>
-                <td className="td-main">Quality Control</td>
-                <td>9 Inspections</td>
-                <td>{openNCRs} Open NCR</td>
-                <td><div className="progress-bar" style={{ width: '80px' }}><div className="progress-fill" style={{ width: '75%', background: 'var(--green)' }}></div></div></td>
-                <td><span className={`badge ${getStatusBadgeClass('on-track')}`}>On Track</span></td>
-              </tr>
-              <tr>
-                <td className="td-main">Production Bay</td>
-                <td>22 Spools</td>
-                <td>3 Delay</td>
-                <td><div className="progress-bar" style={{ width: '80px' }}><div className="progress-fill" style={{ width: '92%', background: 'var(--orange)' }}></div></div></td>
-                <td><span className="badge badge-red">Critical Load</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <Table 
+          data={[
+            { dept: 'Marketing & Tendering', tasks: '6 Bids', critical: '0', load: 60, status: 'on-track', color: 'var(--blue)' },
+            { dept: 'Procurement', tasks: '14 Orders', critical: `${purchaseRequests.filter(p => p.priority === 'urgent').length} urgent`, load: 85, status: 'high-priority', color: 'var(--amber)' },
+            { dept: 'Quality Control', tasks: '9 Inspections', critical: `${openNCRs} Open NCR`, load: 75, status: 'on-track', color: 'var(--green)' },
+            { dept: 'Production Bay', tasks: '22 Spools', critical: '3 Delay', load: 92, status: 'critical', color: 'var(--orange)' },
+          ]}
+          keyExtractor={(item) => item.dept}
+          columns={[
+            { header: 'Department', key: 'dept' },
+            { header: 'Open Tasks', key: 'tasks' },
+            { header: 'Critical Items', key: 'critical' },
+            { 
+              header: 'Load Factor', 
+              key: 'load',
+              render: (item) => <ProgressBar progress={item.load} color={item.color} className="table-progress" />
+            },
+            { 
+              header: 'Current Status', 
+              key: 'status',
+              render: (item) => (
+                <Badge variant={item.status === 'on-track' ? 'success' : item.status === 'critical' ? 'danger' : 'warning'}>
+                  {item.status.replace('-', ' ')}
+                </Badge>
+              )
+            }
+          ]}
+        />
       </div>
+      {/* Global modals handled by ModalManager */}
     </>
   );
 };

@@ -48,3 +48,5 @@ export const getStatusLabel = (status: string) => {
   };
   return map[status.toLowerCase()] || status;
 };
+
+export const formatStatus = getStatusLabel;

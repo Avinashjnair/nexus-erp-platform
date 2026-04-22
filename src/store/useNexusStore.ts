@@ -1,9 +1,17 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { 
   Project, PurchaseRequest, InspectionRequest, InspectionReport, 
   NCR, ProductionActivity, MaterialRequest, SKU, Tender, Vendor, 
   ActivityLogItem, RoleId, UserRole 
 } from '../types/erp';
+
+export interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  duration?: number;
+}
 
 interface NexusState {
   currentUser: UserRole | null;
@@ -21,29 +29,65 @@ interface NexusState {
   tenders: Tender[];
   vendors: Vendor[];
   activityLog: ActivityLogItem[];
+  
+  // Modal State
+  modalOpen: string | null;
+  modalData: any;
+
+  // Toast State
+  toasts: Toast[];
 
   // Actions
   setRole: (role: RoleId) => void;
   setCurrentProject: (id: string) => void;
   login: (role: RoleId) => void;
   logout: () => void;
+  openModal: (id: string, data?: any) => void;
+  closeModal: () => void;
+  
+  addToast: (message: string, type: Toast['type'], duration?: number) => void;
+  removeToast: (id: string) => void;
+
+  // Mutation Actions
+  addProject: (project: Project) => void;
+  
+  addPR: (pr: PurchaseRequest) => void;
+  approvePR: (id: string) => void;
+  rejectPR: (id: string) => void;
+  
+  addIR: (ir: InspectionRequest) => void;
+  updateIRStatus: (id: string, status: InspectionRequest['status']) => void;
+  addNCR: (ncr: NCR) => void;
+  addReport: (report: InspectionReport) => void;
+  
+  updateActivityProgress: (id: string, progress: number) => void;
+  
+  addMR: (mr: MaterialRequest) => void;
+  issueMR: (id: string) => void;
+  
+  _log: (item: Omit<ActivityLogItem, 'id'>) => void;
 }
 
-export const useNexusStore = create<NexusState>((set) => ({
+export const useNexusStore = create<NexusState>()(
+  persist(
+    (set) => ({
   currentUser: null,
   currentRole: 'management',
   currentProject: 'p1',
+  modalOpen: null,
+  modalData: null,
+  toasts: [],
 
   roles: {
-    management: { name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' },
-    marketing:  { name: 'Sara Al Hashimi', initials: 'SH', title: 'Marketing Lead', color: '#3b82f6' },
-    purchase:   { name: 'Khalid Ibrahim', initials: 'KI', title: 'Procurement Officer', color: '#f59e0b' },
-    qaqc:       { name: 'Priya Nair', initials: 'PN', title: 'QC Engineer', color: '#10b981' },
-    production: { name: 'Omar Al Suwaidi', initials: 'OS', title: 'Production Supervisor', color: '#f97316' },
-    store:      { name: 'Rajan Pillai', initials: 'RP', title: 'Store Keeper', color: '#8b5cf6' },
-    workflow:   { name: 'System Automator', initials: 'SA', title: 'Workflow Engine', color: '#14b8a6' },
-    reports:    { name: 'Data Analyst', initials: 'DA', title: 'Intelligence Lead', color: '#4f7cff' },
-    initiate:   { name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' }
+    management: { role: 'management', name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' },
+    marketing:  { role: 'marketing', name: 'Sara Al Hashimi', initials: 'SH', title: 'Marketing Lead', color: '#3b82f6' },
+    purchase:   { role: 'purchase', name: 'Khalid Ibrahim', initials: 'KI', title: 'Procurement Officer', color: '#f59e0b' },
+    qaqc:       { role: 'qaqc', name: 'Priya Nair', initials: 'PN', title: 'QC Engineer', color: '#10b981' },
+    production: { role: 'production', name: 'Omar Al Suwaidi', initials: 'OS', title: 'Production Supervisor', color: '#f97316' },
+    store:      { role: 'store', name: 'Rajan Pillai', initials: 'RP', title: 'Store Keeper', color: '#8b5cf6' },
+    workflow:   { role: 'workflow', name: 'System Automator', initials: 'SA', title: 'Workflow Engine', color: '#14b8a6' },
+    reports:    { role: 'reports', name: 'Data Analyst', initials: 'DA', title: 'Intelligence Lead', color: '#4f7cff' },
+    initiate:   { role: 'initiate', name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' }
   },
 
   projects: [
@@ -139,5 +183,86 @@ export const useNexusStore = create<NexusState>((set) => ({
   setRole: (role) => set({ currentRole: role }),
   setCurrentProject: (id) => set({ currentProject: id }),
   login: (role) => set((state) => ({ currentUser: state.roles[role], currentRole: role })),
-  logout: () => set({ currentUser: null })
+  logout: () => set({ currentUser: null }),
+  openModal: (id, data = null) => set({ modalOpen: id, modalData: data }),
+  closeModal: () => set({ modalOpen: null, modalData: null }),
+
+  // Helper for activity log
+  _log: (item: ActivityLogItem) => set((state) => ({ 
+    activityLog: [item, ...state.activityLog].slice(0, 50) 
+  })),
+
+  addProject: (project) => set((state) => ({ 
+    projects: [project, ...state.projects] 
+  })),
+
+  addPR: (pr) => set((state) => ({ 
+    purchaseRequests: [pr, ...state.purchaseRequests] 
+  })),
+
+  approvePR: (id) => set((state) => ({
+    purchaseRequests: state.purchaseRequests.map(p => 
+      p.id === id ? { ...p, status: 'approved' } : p
+    )
+  })),
+
+  rejectPR: (id) => set((state) => ({
+    purchaseRequests: state.purchaseRequests.map(p => 
+      p.id === id ? { ...p, status: 'rejected' } : p
+    )
+  })),
+
+  addIR: (ir) => set((state) => ({ 
+    inspectionRequests: [ir, ...state.inspectionRequests] 
+  })),
+
+  updateIRStatus: (id, status) => set((state) => ({
+    inspectionRequests: state.inspectionRequests.map(i => 
+      i.id === id ? { ...i, status } : i
+    )
+  })),
+
+  addNCR: (ncr) => set((state) => ({ 
+    ncrs: [ncr, ...state.ncrs] 
+  })),
+
+  addReport: (report) => set((state) => ({ 
+    reports: [report, ...state.reports] 
+  })),
+
+  updateActivityProgress: (id, progress) => set((state) => ({
+    activities: state.activities.map(a => 
+      a.id === id ? { ...a, actual: progress, lastUpdated: 'Just now' } : a
+    )
+  })),
+
+  addMR: (mr) => set((state) => ({ 
+    materialRequests: [mr, ...state.materialRequests] 
+  })),
+
+  issueMR: (id) => set((state) => ({
+    materialRequests: state.materialRequests.map(m => 
+      m.id === id ? { ...m, status: 'issued' } : m
+    )
+  })),
+
+  addToast: (message, type, duration = 4000) => set((state) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    
+    // Auto remove
+    setTimeout(() => {
+      useNexusStore.getState().removeToast(id);
+    }, duration);
+
+    return { toasts: [...state.toasts, { id, message, type, duration }] };
+  }),
+
+  removeToast: (id) => set((state) => ({
+    toasts: state.toasts.filter(t => t.id !== id)
+  }))
+}), {
+  name: 'nexus-erp-store',
+  partialize: (state) => Object.fromEntries(
+    Object.entries(state).filter(([key]) => !['modalOpen', 'modalData', 'toasts'].includes(key))
+  )
 }));

@@ -14,12 +14,13 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import type { RoleId } from '../types/erp';
+import { ROLE_PERMISSIONS } from '../config/permissions';
 
 const Sidebar: React.FC = () => {
-  const { currentRole, currentUser, projects, currentProject, setCurrentProject, setRole, logout } = useNexusStore();
+  const { currentRole, currentUser, roles, projects, currentProject, setCurrentProject, setRole, logout } = useNexusStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const navItems = [
+  const allNavItems = [
     { id: 'management', label: 'Management', icon: <LayoutDashboard size={18} /> },
     { id: 'qaqc', label: 'QA / QC', icon: <ClipboardCheck size={18} /> },
     { id: 'purchase', label: 'Purchase', icon: <ShoppingCart size={18} /> },
@@ -30,6 +31,11 @@ const Sidebar: React.FC = () => {
     { id: 'reports', label: 'Reports', icon: <FileText size={18} /> },
     { id: 'initiate', label: 'New Project', icon: <PlusCircle size={18} /> },
   ];
+
+  // Robust permission check: handle cases where currentUser might be rehydrated without a role property
+  const effectiveRole = currentUser?.role || (Object.keys(roles) as RoleId[]).find(r => roles[r].name === currentUser?.name) || currentRole;
+  const allowedModules = ROLE_PERMISSIONS[effectiveRole] || [];
+  const navItems = allNavItems.filter(item => allowedModules.includes(item.id as RoleId));
 
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>

@@ -1,6 +1,7 @@
 export type RoleId = 'management' | 'marketing' | 'purchase' | 'qaqc' | 'production' | 'store' | 'workflow' | 'reports' | 'initiate';
 
 export interface UserRole {
+  role: RoleId;
   name: string;
   initials: string;
   title: string;
