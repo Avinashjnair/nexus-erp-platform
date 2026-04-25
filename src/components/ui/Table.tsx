@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ReactNode } from 'react';
 
 interface Column<T> {
@@ -24,12 +25,16 @@ function Table<T>({
   onRowClick 
 }: TableProps<T>) {
   return (
-    <div className={`table-wrap ${className}`}>
-      <table>
+    <div className={`w-full overflow-x-auto ${className}`}>
+      <table className="w-full border-separate border-spacing-y-4">
         <thead>
           <tr>
             {columns.map((col, idx) => (
-              <th key={idx} style={{ width: col.width }}>
+              <th 
+                key={idx} 
+                className="text-left px-8 py-5 text-[10px] font-black text-text-tertiary uppercase tracking-[0.2em]" 
+                style={{ width: col.width }}
+              >
                 {col.header}
               </th>
             ))}
@@ -43,7 +48,7 @@ function Table<T>({
                 <tr 
                   key={key} 
                   onClick={() => onRowClick?.(item)}
-                  style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                  className="bg-surface/30 hover:bg-card transition-all shadow-sm hover:shadow-xl hover:-translate-y-0.5 cursor-pointer group relative"
                 >
                   {columns.map((col, colIdx) => {
                     let content: ReactNode;
@@ -58,7 +63,7 @@ function Table<T>({
                     }
 
                     return (
-                      <td key={colIdx} className={colIdx === 0 ? 'td-main' : ''}>
+                      <td key={colIdx} className="px-8 py-6 text-[14px] text-text-primary first:rounded-l-2xl last:rounded-r-2xl border-y border-transparent first:border-l last:border-r group-hover:border-border-subtle tracking-tight">
                         {content}
                       </td>
                     );
@@ -68,7 +73,10 @@ function Table<T>({
             })
           ) : (
             <tr>
-              <td colSpan={columns.length} style={{ textAlign: 'center', padding: '40px', color: 'var(--text3)' }}>
+              <td 
+                colSpan={columns.length} 
+                className="text-center py-12 text-text-tertiary bg-transparent"
+              >
                 No records found.
               </td>
             </tr>

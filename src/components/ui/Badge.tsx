@@ -13,21 +13,26 @@ const Badge: React.FC<BadgeProps> = ({
   className = '', 
   style 
 }) => {
-  const getVariantClass = () => {
+  const getVariantStyles = () => {
     switch (variant) {
-      case 'secondary': return 'badge-secondary';
-      case 'success': return 'badge-green';
-      case 'warning': return 'badge-amber';
-      case 'danger': return 'badge-red';
-      case 'info': return 'badge-blue';
-      case 'ghost': return 'badge-ghost';
-      default: return 'badge-primary';
+      case 'success': 
+        return 'bg-success/10 text-success border-success/20';
+      case 'warning': 
+        return 'bg-warning/10 text-warning border-warning/20';
+      case 'danger': 
+        return 'bg-error/10 text-error border-error/20';
+      case 'info': 
+        return 'bg-primary/10 text-primary border-primary/20';
+      case 'secondary': 
+        return 'bg-surface text-text-tertiary border-border-subtle';
+      default: 
+        return 'bg-primary/10 text-primary border-primary/20';
     }
   };
 
   return (
     <span 
-      className={`badge ${getVariantClass()} ${className}`} 
+      className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${getVariantStyles()} ${className}`} 
       style={style}
     >
       {children}

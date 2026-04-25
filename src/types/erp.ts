@@ -130,6 +130,40 @@ export interface Tender {
   status: 'drafting' | 'submitted' | 'won' | 'lost';
   team: string;
   probability: number;
+  category: string;
+}
+
+export interface Quotation {
+  id: string;
+  tenderId?: string;
+  title: string;
+  client: string;
+  value: number;
+  status: 'draft' | 'approval' | 'sent' | 'revised' | 'accepted' | 'rejected';
+  date: string;
+  version: number;
+}
+
+export interface Feedback {
+  id: string;
+  projectId: string;
+  client: string;
+  rating: number;
+  comment: string;
+  date: string;
+  status: 'resolved' | 'pending';
+}
+
+export interface ERPDocument {
+  id: string;
+  title: string;
+  type: 'Drawing' | 'Specification' | 'Contract' | 'Photo';
+  category: string;
+  status: 'Draft' | 'Approved' | 'Superseded';
+  version: string;
+  parentId: string; // ProjectID or TenderID
+  file: string;
+  size: string;
 }
 
 export interface Vendor {

@@ -3,11 +3,11 @@ import { useNexusStore } from '../store/useNexusStore';
 import StatCard from '../components/ui/StatCard';
 import Table from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
-import { ClipboardCheck, ShieldAlert, FileText, CheckCircle2, Plus, Search } from 'lucide-react';
+import { ClipboardCheck, ShieldAlert, FileText, CheckCircle2, Plus, Search, MoreHorizontal } from 'lucide-react';
 import { formatStatus } from '../utils/formatters';
 
 const QAQCPage: React.FC = () => {
-  const { inspectionRequests, ncrs, reports, currentRole, openModal } = useNexusStore();
+  const { inspectionRequests, ncrs, reports, openModal } = useNexusStore();
   const [search, setSearch] = useState('');
 
   const stats = {
@@ -22,107 +22,82 @@ const QAQCPage: React.FC = () => {
   );
 
   const irColumns = [
-    { header: 'IR Ref', accessor: (ir: any) => <span className="font-mono text-sm">{ir.id}</span> },
-    { header: 'Activity / Item', accessor: 'activity' },
+    { header: 'Ref ID', render: (ir: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700, fontSize: '13px' }}>{ir.id}</span> },
+    { header: 'Inspection Item', accessor: 'activity', width: '30%' },
     { header: 'Type', accessor: 'type' },
-    { header: 'Status', accessor: (ir: any) => (
+    { header: 'Status', render: (ir: any) => (
       <Badge variant={
         ir.status === 'approved' ? 'success' : 
         ir.status === 'rejected' ? 'danger' : 
         ir.status === 'scheduled' ? 'info' : 'warning'
       }>
-        {formatStatus(ir.status)}
+        {formatStatus(ir.status).toUpperCase()}
       </Badge>
     )},
-    { header: 'Requested Date', accessor: 'date' },
-    { header: 'Location', accessor: 'location' },
-    { header: 'Actions', accessor: (ir: any) => (
-      <div className="table-actions">
-        <button className="action-btn-sm" onClick={() => openModal('ir_details', ir)}>Inspect</button>
-      </div>
+    { header: 'Actions', render: (ir: any) => (
+      <button className="theme-toggle" style={{ width: '32px', height: '32px' }} onClick={() => openModal('ir_details', ir)}>
+        <MoreHorizontal size={14} />
+      </button>
     )}
   ];
 
-  const ncrColumns = [
-    { header: 'NCR ID', accessor: (ncr: any) => <span className="font-mono text-sm">{ncr.id}</span> },
-    { header: 'Issue Description', accessor: 'activity' },
-    { header: 'Severity', accessor: (ncr: any) => (
-      <Badge variant={ncr.severity === 'major' ? 'danger' : 'warning'}>{ncr.severity.toUpperCase()}</Badge>
-    )},
-    { header: 'Status', accessor: (ncr: any) => (
-      <Badge variant={ncr.status === 'open' ? 'danger' : 'success'}>{ncr.status.toUpperCase()}</Badge>
-    )},
-    { header: 'Raised By', accessor: 'raisedBy' }
-  ];
-
   return (
-    <div className="page-fade-in">
-      <div className="page-header">
+    <div className="animate-in">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h1 className="page-title">QA / QC Dashboard</h1>
-          <p className="page-subtitle">Quality control tracking and non-conformance management</p>
+          <Badge variant="danger" style={{ marginBottom: '8px' }}>Quality & Compliance</Badge>
+          <h1 style={{ margin: 0 }}>Inspection Control</h1>
+          <p className="card-sub">Tracking non-conformances and scheduled site inspections</p>
         </div>
-        <div className="page-actions">
-          <button className="btn btn-secondary" onClick={() => openModal('ncr_create')}>
-            <ShieldAlert size={18} />
-            <span>Raise NCR</span>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn-primary" style={{ background: 'var(--error)' }} onClick={() => openModal('ncr_create')}>
+            <ShieldAlert size={18} style={{ marginRight: '8px' }} /> Raise NCR
           </button>
-          <button className="btn btn-primary" onClick={() => openModal('ir_create')}>
-            <Plus size={18} />
-            <span>New Inspection Request</span>
+          <button className="btn-primary" onClick={() => openModal('ir_create')}>
+            <Plus size={18} style={{ marginRight: '8px' }} /> Request Inspection
           </button>
         </div>
       </div>
 
       <div className="stats-grid">
-        <StatCard 
-          label="Total Inspections" 
-          value={stats.totalIR} 
-          icon={<ClipboardCheck />} 
-          accentColor="var(--blue)" 
-        />
-        <StatCard 
-          label="Pending / Scheduled" 
-          value={stats.pendingIR} 
-          icon={<FileText />} 
-          accentColor="var(--amber)" 
-        />
-        <StatCard 
-          label="Open NCRs" 
-          value={stats.openNCR} 
-          icon={<ShieldAlert />} 
-          accentColor="var(--red)" 
-        />
-        <StatCard 
-          label="Inspection Reports" 
-          value={stats.reportsTotal} 
-          icon={<CheckCircle2 />} 
-          accentColor="var(--green)" 
-        />
+        <StatCard label="Total Inspections" value={stats.totalIR} icon={<ClipboardCheck size={18} />} accentColor="#3b82f6" />
+        <StatCard label="Scheduled / Pending" value={stats.pendingIR} trend={{ value: 'Active', type: 'up' }} icon={<FileText size={18} />} accentColor="#f59e0b" />
+        <StatCard label="Open NCRs" value={stats.openNCR} trend={{ value: 'Critical', type: 'down' }} icon={<ShieldAlert size={18} />} accentColor="#ef4444" />
+        <StatCard label="Closed Reports" value={stats.reportsTotal} icon={<CheckCircle2 size={18} />} accentColor="#10b981" />
       </div>
 
-      <div className="grid-2" style={{ marginTop: '24px' }}>
+      <div className="grid-2">
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">Pending Inspections</h2>
-            <div className="search-box-sm">
-              <Search size={14} />
-              <input 
-                type="text" 
-                placeholder="Search IRs..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+            <div>
+              <h4 className="card-title">Live Inspection Stream</h4>
+              <p className="card-sub">Review and process inspection requests</p>
+            </div>
+            <div className="topbar-search" style={{ width: '200px', backgroundColor: 'var(--bg-base)' }}>
+              <Search size={14} color="var(--text-tertiary)" />
+              <input type="text" placeholder="Search IR..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
-          <Table data={filteredIR} columns={irColumns} />
+          <Table data={filteredIR} columns={irColumns} onRowClick={(ir) => openModal('ir_details', ir)} />
         </div>
 
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">Active NCRs</h2>
+            <div>
+              <h4 className="card-title">Open NCR Registry</h4>
+              <p className="card-sub">Critical non-conformance items requiring rectification</p>
+            </div>
           </div>
-          <Table data={ncrs.filter(n => n.status === 'open')} columns={ncrColumns} />
+          <Table 
+            data={ncrs.filter(n => n.status === 'open')}
+            columns={[
+              { header: 'NCR ID', render: (n: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700, color: 'var(--error)' }}>{n.id}</span> },
+              { header: 'Description', accessor: 'activity' },
+              { header: 'Severity', render: (n: any) => (
+                <Badge variant={n.severity === 'major' ? 'danger' : 'warning'}>{n.severity.toUpperCase()}</Badge>
+              )}
+            ]}
+          />
         </div>
       </div>
     </div>

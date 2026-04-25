@@ -3,15 +3,14 @@ import { useNexusStore } from '../store/useNexusStore';
 import StatCard from '../components/ui/StatCard';
 import Table from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
-import { ShoppingCart, Clock, CheckCircle, AlertCircle, Plus, Filter, Search } from 'lucide-react';
-import { formatCurrency, formatStatus } from '../utils/formatters';
+import { ShoppingCart, Clock, CheckCircle, AlertCircle, Plus, Search, Filter, MoreHorizontal } from 'lucide-react';
+import { formatStatus } from '../utils/formatters';
 
 const PurchasePage: React.FC = () => {
   const { purchaseRequests, approvePR, rejectPR, currentRole, openModal, addToast } = useNexusStore();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
 
-  // Stats calculation
   const stats = {
     total: purchaseRequests.length,
     pending: purchaseRequests.filter(p => p.status === 'pending').length,
@@ -26,121 +25,92 @@ const PurchasePage: React.FC = () => {
   });
 
   const columns = [
-    { header: 'PR ID', accessor: (pr: any) => <span className="font-mono text-sm">{pr.id}</span> },
-    { header: 'Item Description', accessor: 'item' },
-    { header: 'Qty', accessor: (pr: any) => `${pr.qty} ${pr.unit}` },
-    { header: 'Priority', accessor: (pr: any) => (
+    { header: 'PR ID', render: (pr: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700, fontSize: '13px' }}>{pr.id}</span> },
+    { header: 'Requirement', accessor: 'item', width: '25%' },
+    { header: 'Quantity', render: (pr: any) => `${pr.qty} ${pr.unit}` },
+    { header: 'Priority', render: (pr: any) => (
       <Badge variant={pr.priority === 'urgent' ? 'danger' : 'info'}>{pr.priority.toUpperCase()}</Badge>
     )},
-    { header: 'Status', accessor: (pr: any) => (
+    { header: 'Status', render: (pr: any) => (
       <Badge variant={
         pr.status === 'approved' || pr.status === 'po-issued' ? 'success' : 
         pr.status === 'rejected' ? 'danger' : 
         pr.status === 'pending' ? 'warning' : 'info'
       }>
-        {formatStatus(pr.status)}
+        {formatStatus(pr.status).toUpperCase()}
       </Badge>
     )},
-    { header: 'Date Raised', accessor: 'raised' },
-    { header: 'Actions', accessor: (pr: any) => (
-      <div className="table-actions">
+    { header: 'Actions', render: (pr: any) => (
+      <div style={{ display: 'flex', gap: '8px' }}>
         {pr.status === 'pending' && (currentRole === 'management' || currentRole === 'purchase') && (
           <>
             <button 
-              className="action-btn-sm text-green" 
-              onClick={() => {
-                approvePR(pr.id);
-                addToast(`PR ${pr.id} approved`, 'success');
-              }}
-              title="Approve"
+              className="theme-toggle" 
+              style={{ width: '32px', height: '32px', color: 'var(--success)' }}
+              onClick={(e) => { e.stopPropagation(); approvePR(pr.id); addToast(`PR ${pr.id} approved`, 'success'); }}
             >
               <CheckCircle size={14} />
             </button>
             <button 
-              className="action-btn-sm text-red" 
-              onClick={() => {
-                rejectPR(pr.id);
-                addToast(`PR ${pr.id} rejected`, 'error');
-              }}
-              title="Reject"
+              className="theme-toggle" 
+              style={{ width: '32px', height: '32px', color: 'var(--error)' }}
+              onClick={(e) => { e.stopPropagation(); rejectPR(pr.id); addToast(`PR ${pr.id} rejected`, 'error'); }}
             >
               <AlertCircle size={14} />
             </button>
           </>
         )}
-        <button className="action-btn-sm" onClick={() => openModal('pr_details', pr)}>View</button>
+        <button className="theme-toggle" style={{ width: '32px', height: '32px' }} onClick={() => openModal('pr_details', pr)}>
+          <MoreHorizontal size={14} />
+        </button>
       </div>
     )}
   ];
 
   return (
-    <div className="page-fade-in">
-      <div className="page-header">
+    <div className="animate-in">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h1 className="page-title">Purchase Dashboard</h1>
-          <p className="page-subtitle">Procurement tracking and PR lifecycle management</p>
+          <Badge variant="info" style={{ marginBottom: '8px' }}>Procurement & Supply Chain</Badge>
+          <h1 style={{ margin: 0 }}>Materials Control</h1>
+          <p className="card-sub">Manage purchase requisitions and vendor fulfillment</p>
         </div>
-        <button className="btn btn-primary" onClick={() => openModal('pr_create')}>
-          <Plus size={18} />
-          <span>New Purchase Request</span>
+        <button className="btn-primary" onClick={() => openModal('pr_create')}>
+          <Plus size={18} style={{ marginRight: '8px' }} /> Create Requisition
         </button>
       </div>
 
       <div className="stats-grid">
-        <StatCard 
-          label="Total Requests" 
-          value={stats.total} 
-          icon={<ShoppingCart />} 
-          accentColor="var(--blue)" 
-        />
-        <StatCard 
-          label="Pending Approval" 
-          value={stats.pending} 
-          icon={<Clock />} 
-          accentColor="var(--amber)" 
-        />
-        <StatCard 
-          label="Approved / PO" 
-          value={stats.approved} 
-          icon={<CheckCircle />} 
-          accentColor="var(--green)" 
-        />
-        <StatCard 
-          label="Urgent Pending" 
-          value={stats.urgent} 
-          icon={<AlertCircle />} 
-          accentColor="var(--red)" 
-        />
+        <StatCard label="Total Requests" value={stats.total} icon={<ShoppingCart size={18} />} accentColor="#3b82f6" />
+        <StatCard label="Pending Approval" value={stats.pending} trend={{ value: 'Needs Action', type: 'down' }} icon={<Clock size={18} />} accentColor="#f59e0b" />
+        <StatCard label="PO Issued" value={stats.approved} icon={<CheckCircle size={18} />} accentColor="#10b981" />
+        <StatCard label="Urgent Items" value={stats.urgent} trend={{ value: 'Critical', type: 'down' }} icon={<AlertCircle size={18} />} accentColor="#ef4444" />
       </div>
 
-      <div className="card" style={{ marginTop: '24px' }}>
+      <div className="card">
         <div className="card-header">
-          <h2 className="card-title">Purchase Requests</h2>
-          <div className="card-actions">
-            <div className="search-box-sm">
-              <Search size={14} />
-              <input 
-                type="text" 
-                placeholder="Search PRs..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+          <div>
+            <h4 className="card-title">Active Requisitions</h4>
+            <p className="card-sub">Listing {filteredData.length} entries</p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div className="topbar-search" style={{ width: '240px', backgroundColor: 'var(--bg-base)' }}>
+              <Search size={14} color="var(--text-tertiary)" />
+              <input type="text" placeholder="Search ID or Item..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <select 
-              className="form-select-sm" 
+              style={{ padding: '0 12px', borderRadius: '8px', border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '13px' }}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
-              <option value="po-issued">PO Issued</option>
-              <option value="delivered">Delivered</option>
               <option value="rejected">Rejected</option>
             </select>
           </div>
         </div>
-        <Table data={filteredData} columns={columns} />
+        <Table data={filteredData} columns={columns} onRowClick={(pr) => openModal('pr_details', pr)} />
       </div>
     </div>
   );

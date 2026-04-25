@@ -2,6 +2,8 @@ import React from 'react';
 import { useNexusStore } from '../../store/useNexusStore';
 import PRModal from './PRModal';
 import IRModal from './IRModal';
+import SettingsModal from './SettingsModal';
+import NewTransactionModal from './NewTransactionModal';
 
 const ModalManager: React.FC = () => {
   const { modalOpen, closeModal } = useNexusStore();
@@ -12,6 +14,8 @@ const ModalManager: React.FC = () => {
     <>
       <PRModal isOpen={modalOpen === 'PR_MODAL'} onClose={closeModal} />
       <IRModal isOpen={modalOpen === 'IR_MODAL'} onClose={closeModal} />
+      <SettingsModal isOpen={modalOpen === 'SETTINGS_MODAL'} onClose={closeModal} />
+      <NewTransactionModal isOpen={modalOpen === 'NEW_TRANSACTION_MODAL'} onClose={closeModal} />
     </>
   );
 };

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { 
   Project, PurchaseRequest, InspectionRequest, InspectionReport, 
   NCR, ProductionActivity, MaterialRequest, SKU, Tender, Vendor, 
-  ActivityLogItem, RoleId, UserRole 
+  ActivityLogItem, RoleId, UserRole, Quotation, Feedback, ERPDocument
 } from '../types/erp';
 
 export interface Toast {
@@ -27,6 +27,9 @@ interface NexusState {
   materialRequests: MaterialRequest[];
   inventory: SKU[];
   tenders: Tender[];
+  quotations: Quotation[];
+  feedback: Feedback[];
+  documents: ERPDocument[];
   vendors: Vendor[];
   activityLog: ActivityLogItem[];
   
@@ -155,12 +158,29 @@ export const useNexusStore = create<NexusState>()(
   ],
 
   tenders: [
-    { id:'TND-2504', ref:'T-25-004', client:'Mubadala Energy', title:'Offshore Jacket Modification', value:6800000, deadline:'2025-06-20', status:'drafting', team:'Sara Al Hashimi', probability:40 },
-    { id:'TND-2503', ref:'T-25-003', client:'Emirates Steel', title:'Maintenance Framework 2025', value:1100000, deadline:'2025-06-15', status:'drafting', team:'Sara Al Hashimi', probability:55 },
-    { id:'TND-2502', ref:'T-25-002', client:'TAQA Arabia', title:'Pipeline Fabrication Ph.2', value:7800000, deadline:'2025-06-03', status:'submitted', team:'Sara Al Hashimi', probability:35 },
-    { id:'TND-2501', ref:'T-25-001', client:'ADNOC Offshore', title:'Structural Mods — Jacket', value:4200000, deadline:'2025-05-28', status:'submitted', team:'Sara Al Hashimi', probability:65 },
-    { id:'TND-2499', ref:'T-24-012', client:'KIZAD Authority', title:'Civil & MEP Works', value:3400000, deadline:'2025-04-30', status:'won', team:'Sara Al Hashimi', probability:100 },
-    { id:'TND-2498', ref:'T-24-011', client:'Mubadala Energy', title:'Tank Farm Modification', value:2900000, deadline:'2025-04-15', status:'lost', team:'Sara Al Hashimi', probability:0 }
+    { id:'TND-2504', ref:'T-25-004', client:'Mubadala Energy', title:'Offshore Jacket Modification', value:6800000, deadline:'2025-06-20', status:'drafting', team:'Sara Al Hashimi', probability:40, category: 'Oil & Gas' },
+    { id:'TND-2503', ref:'T-25-003', client:'Emirates Steel', title:'Maintenance Framework 2025', value:1100000, deadline:'2025-06-15', status:'drafting', team:'Sara Al Hashimi', probability:55, category: 'Infrastructure' },
+    { id:'TND-2502', ref:'T-25-002', client:'TAQA Arabia', title:'Pipeline Fabrication Ph.2', value:7800000, deadline:'2025-06-03', status:'submitted', team:'Sara Al Hashimi', probability:35, category: 'Oil & Gas' },
+    { id:'TND-2501', ref:'T-25-001', client:'ADNOC Offshore', title:'Structural Mods — Jacket', value:4200000, deadline:'2025-05-28', status:'submitted', team:'Sara Al Hashimi', probability:65, category: 'Oil & Gas' },
+    { id:'TND-2499', ref:'T-24-012', client:'KIZAD Authority', title:'Civil & MEP Works', value:3400000, deadline:'2025-04-30', status:'won', team:'Sara Al Hashimi', probability:100, category: 'Industrial' },
+    { id:'TND-2498', ref:'T-24-011', client:'Mubadala Energy', title:'Tank Farm Modification', value:2900000, deadline:'2025-04-15', status:'lost', team:'Sara Al Hashimi', probability:0, category: 'Oil & Gas' }
+  ],
+
+  quotations: [
+    { id: 'QT-8801', title: 'Jacket Modification Proposal', client: 'Mubadala Energy', value: 6800000, status: 'draft', date: '2025-05-18', version: 1, tenderId: 'TND-2504' },
+    { id: 'QT-8800', title: 'Infrastructure Upgrade Ph.3', client: 'KIZAD Authority', value: 5700000, status: 'accepted', date: '2025-05-10', version: 3, tenderId: 'TND-2499' },
+    { id: 'QT-8799', title: 'Pipeline Fab Ph.2 Final', client: 'TAQA Arabia', value: 7800000, status: 'sent', date: '2025-05-15', version: 2, tenderId: 'TND-2502' }
+  ],
+
+  feedback: [
+    { id: 'FB-001', projectId: 'p3', client: 'KIZAD Authority', rating: 5, comment: 'Excellent execution on the structural nodes. On time delivery.', date: '2025-05-15', status: 'resolved' },
+    { id: 'FB-002', projectId: 'p1', client: 'ADNOC Offshore', rating: 4, comment: 'Project on track, communication could be faster.', date: '2025-05-10', status: 'pending' }
+  ],
+
+  documents: [
+    { id: 'DOC-101', title: 'Main Deck Layout', type: 'Drawing', category: 'Engineering', status: 'Approved', version: 'V2', parentId: 'p1', file: 'DWG-101-V2.pdf', size: '4.5 MB' },
+    { id: 'DOC-102', title: 'Technical Specifications', type: 'Specification', category: 'Technical', status: 'Approved', version: 'V1', parentId: 'p1', file: 'SPEC-ADNOC-01.pdf', size: '1.2 MB' },
+    { id: 'DOC-103', title: 'Master Service Agreement', type: 'Contract', category: 'Legal', status: 'Approved', version: 'V1', parentId: 'p1', file: 'MSA-ADNOC.pdf', size: '2.8 MB' }
   ],
 
   vendors: [
