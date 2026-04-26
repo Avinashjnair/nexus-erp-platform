@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNexusStore } from './store/useNexusStore';
 import AppLayout from './components/AppLayout';
 import LoginPage from './pages/LoginPage';
@@ -11,11 +11,26 @@ import MarketingPage from './pages/MarketingPage';
 import WorkflowPage from './pages/WorkflowPage';
 import ReportsPage from './pages/ReportsPage';
 import InitiatePage from './pages/InitiatePage';
+import StrategicDashboard from './pages/StrategicDashboard';
 import ModalManager from './components/modals/ModalManager';
 import ToastContainer from './components/ui/ToastContainer';
 
 const App: React.FC = () => {
-  const { currentUser, currentRole } = useNexusStore();
+  const { currentUser, currentRole, projectControls, addNotification } = useNexusStore();
+
+  useEffect(() => {
+    // Neural Alert System: Monitor KPIs
+    const timer = setTimeout(() => {
+      if (projectControls.spi < 0.85) {
+        addNotification({
+          type: 'error',
+          title: 'NEURAL ALERT: Schedule Variance',
+          text: `Project P2 SPI has dropped to ${projectControls.spi}. Immediate intervention recommended.`
+        });
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [projectControls.spi, addNotification]);
 
   if (!currentUser) {
     return <LoginPage />;
@@ -32,6 +47,7 @@ const App: React.FC = () => {
       case 'workflow':    return <WorkflowPage />;
       case 'reports':     return <ReportsPage />;
       case 'initiate':    return <InitiatePage />;
+      case 'strategic':   return <StrategicDashboard />;
       default:            return <ManagementPage />;
     }
   };

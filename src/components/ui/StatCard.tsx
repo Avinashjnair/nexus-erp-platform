@@ -1,80 +1,65 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { cn } from '../../lib/utils';
 
 interface StatCardProps {
   label: string;
   value: string | number;
-  subValue?: string;
+  /** Subtitle or detail text */
+  sub?: string;
+  /** Lucide icon component */
   icon?: ReactNode;
+  /** CSS color variable for accent e.g. "var(--violet)" */
   accentColor?: string;
+  /** CSS color variable for background e.g. "var(--violet-dim)" */
+  dimColor?: string;
+  /** Trend/delta object */
+  trend?: {
+    label: string;
+    up: boolean;
+  };
+  /** Legacy prop support for Sprint 3 compatibility */
   delta?: string | number;
   deltaType?: 'up' | 'down' | 'neutral';
-  trend?: {
-    value: string;
-    type: 'up' | 'down' | 'neutral';
-  };
-  className?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ 
-  label, 
-  value, 
-  subValue, 
-  icon, 
-  accentColor,
-  delta,
-  deltaType,
+const StatCard: React.FC<StatCardProps> = ({
+  label,
+  value,
+  sub,
+  icon,
+  accentColor = 'var(--violet)',
+  dimColor,
   trend,
-  className
+  delta,
+  deltaType
 }) => {
-  const dType = deltaType || trend?.type || 'neutral';
-  const dVal = delta || trend?.value;
+  const accent = accentColor;
+  const dim = dimColor || `${accentColor}15`;
+  
+  // Normalize trend/delta
+  const showTrend = trend || delta;
+  const trendLabel = trend?.label || delta;
+  const isUp = trend ? trend.up : deltaType === 'up';
+  const isDown = trend ? !trend.up : deltaType === 'down';
 
   return (
-    <div className={cn(
-      "bg-white rounded-[2rem] border border-[var(--border)] p-6 relative overflow-hidden transition-all duration-300 hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] group",
-      className
-    )}>
+    <div className="stat-card" style={{ '--stat-accent': accent } as React.CSSProperties}>
       {icon && (
-        <div 
-          className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-          style={{ 
-            backgroundColor: accentColor ? `${accentColor}15` : 'var(--bg3)', 
-            color: accentColor || 'var(--text)' 
-          }}
-        >
+        <div className="stat-icon-wrap" style={{ background: dim, color: accent }}>
           {icon}
         </div>
       )}
-
-      <div>
-        <p className="text-xs text-[var(--text-muted)] font-medium mb-1">{label}</p>
-        <h3 className="text-3xl font-display font-semibold tracking-tight">{value}</h3>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+      <div className="stat-delta">
+        {showTrend ? (
+          <span className={isUp ? 'delta-up' : isDown ? 'delta-down' : 'delta-neu'}>
+            {isUp ? '↑ ' : isDown ? '↓ ' : ''}{trendLabel}
+          </span>
+        ) : (
+          <span className="delta-neu">{sub}</span>
+        )}
       </div>
-
-      {(dVal || subValue) && (
-        <div className="flex items-center gap-2 mt-3">
-          {dVal && (
-            <div className={cn(
-              "flex items-center gap-1 text-xs font-semibold",
-              dType === 'up' ? 'text-[var(--green)]' : 
-              dType === 'down' ? 'text-[var(--red)]' : 
-              'text-[var(--text-muted)]'
-            )}>
-              <div className={cn(
-                "p-1 rounded-full",
-                dType === 'up' ? 'bg-[var(--accent)] text-black' : 'bg-[#f0f0f0]'
-              )}>
-                {dType === 'down' ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-              </div>
-              <span>{dVal}</span>
-            </div>
-          )}
-          {subValue && <span className="text-xs text-[var(--text-muted)]">{subValue}</span>}
-        </div>
-      )}
     </div>
   );
 };

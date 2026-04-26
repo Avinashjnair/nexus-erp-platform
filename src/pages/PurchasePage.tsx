@@ -1,109 +1,156 @@
-import React from 'react';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import ProgressBar from '../components/ui/ProgressBar';
-import DraggableGrid from '../components/ui/DraggableGrid';
-import Table from '../components/ui/Table';
+// ═══════════════════════════════════
+// PurchasePage.tsx — Sprint 4
+// ═══════════════════════════════════
+import React, { useState } from 'react';
 import { useNexusStore } from '../store/useNexusStore';
-import { Truck, AlertTriangle, CheckCircle2, ArrowUpRight } from 'lucide-react';
-
-const LAYOUTS = {
-  lg: [
-    { i: 'stats', x: 0, y: 0, w: 12, h: 2, minW: 8, minH: 2 },
-    { i: 'prs', x: 0, y: 2, w: 7, h: 5, minW: 5, minH: 4 },
-    { i: 'vendors', x: 7, y: 2, w: 5, h: 5, minW: 4, minH: 4 },
-  ],
-};
+import StatCard from '../components/ui/StatCard';
+import Table from '../components/ui/Table';
+import Badge from '../components/ui/Badge';
+import {
+  ShoppingCart, Clock, CheckCircle, AlertCircle, Plus, Search,
+} from 'lucide-react';
+import { formatCurrency, formatStatus } from '../utils/formatters';
+import type { PurchaseRequest } from '../types/erp';
 
 const PurchasePage: React.FC = () => {
-  const { purchaseRequests, vendors, openModal } = useNexusStore();
+  const { purchaseRequests, approvePR, rejectPR, currentRole, openModal, addToast } = useNexusStore();
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
 
-  const pending = purchaseRequests.filter(p => p.status === 'pending').length;
-  const approved = purchaseRequests.filter(p => p.status === 'approved').length;
-  const delivered = purchaseRequests.filter(p => p.status === 'delivered').length;
-  const urgent = purchaseRequests.filter(p => p.priority === 'urgent').length;
+  const stats = {
+    total:    purchaseRequests.length,
+    pending:  purchaseRequests.filter(p => p.status === 'pending').length,
+    approved: purchaseRequests.filter(p => p.status === 'approved' || p.status === 'po-issued').length,
+    urgent:   purchaseRequests.filter(p => p.priority === 'urgent' && p.status === 'pending').length,
+  };
+
+  const filtered = purchaseRequests.filter(pr => {
+    const matchStatus = filter === 'all' || pr.status === filter;
+    const q = search.toLowerCase();
+    const matchSearch = pr.item.toLowerCase().includes(q) || pr.id.toLowerCase().includes(q);
+    return matchStatus && matchSearch;
+  });
+
+  const canApprove = currentRole === 'management' || currentRole === 'purchase';
+
+  const columns = [
+    {
+      header: 'PR ID',
+      accessor: (pr: PurchaseRequest) => (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>{pr.id}</span>
+      ),
+    },
+    { header: 'Item', accessor: 'item' as keyof PurchaseRequest },
+    {
+      header: 'Qty',
+      accessor: (pr: PurchaseRequest) => `${pr.qty} ${pr.unit}`,
+    },
+    {
+      header: 'Priority',
+      accessor: (pr: PurchaseRequest) => (
+        <Badge variant={pr.priority === 'urgent' ? 'danger' : 'info'}>
+          {pr.priority.toUpperCase()}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Status',
+      accessor: (pr: PurchaseRequest) => (
+        <Badge
+          variant={
+            pr.status === 'approved' || pr.status === 'po-issued' || pr.status === 'delivered'
+              ? 'success'
+              : pr.status === 'rejected'
+              ? 'danger'
+              : pr.status === 'pending'
+              ? 'warning'
+              : 'info'
+          }
+        >
+          {formatStatus(pr.status)}
+        </Badge>
+      ),
+    },
+    { header: 'Raised', accessor: 'raised' as keyof PurchaseRequest },
+    {
+      header: 'Actions',
+      accessor: (pr: PurchaseRequest) => (
+        <div className="table-actions">
+          {pr.status === 'pending' && canApprove && (
+            <>
+              <button
+                className="action-btn-sm text-green"
+                onClick={() => { approvePR(pr.id); addToast(`${pr.id} approved`, 'success'); }}
+                title="Approve"
+              >
+                <CheckCircle size={12} />
+              </button>
+              <button
+                className="action-btn-sm text-red"
+                onClick={() => { rejectPR(pr.id); addToast(`${pr.id} rejected`, 'error'); }}
+                title="Reject"
+              >
+                <AlertCircle size={12} />
+              </button>
+            </>
+          )}
+          <button className="action-btn-sm" onClick={() => openModal('VIEW_PR_MODAL', pr)}>
+            View
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <DraggableGrid layouts={LAYOUTS}>
-      {/* Stats */}
-      <div key="stats">
-        <div className="grid grid-cols-4 gap-5 h-full">
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <p className="text-xs text-[var(--text-muted)] font-medium">Pending PRs</p>
-            <h3 className="text-3xl font-display font-semibold">{pending}</h3>
-            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--amber)]">
-              <AlertTriangle className="w-3 h-3" /> {urgent} urgent
+    <div className="page-fade-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Purchase dashboard</h1>
+          <p className="page-subtitle">Procurement tracking and PR lifecycle management</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => openModal('PR_MODAL')}>
+          <Plus size={14} /> New purchase request
+        </button>
+      </div>
+
+      <div className="stats-grid gap-b">
+        <StatCard label="Total requests"    value={stats.total}    icon={<ShoppingCart size={18} />} accentColor="var(--blue)"   />
+        <StatCard label="Pending approval"  value={stats.pending}  icon={<Clock size={18} />}        accentColor="var(--amber)"  />
+        <StatCard label="Approved / PO"     value={stats.approved} icon={<CheckCircle size={18} />}  accentColor="var(--green)"  />
+        <StatCard label="Urgent pending"    value={stats.urgent}   icon={<AlertCircle size={18} />}  accentColor="var(--red)"    />
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">Purchase requests</div>
+          <div className="card-actions">
+            <div className="search-box-sm">
+              <Search size={12} />
+              <input
+                type="text"
+                placeholder="Search PRs…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
             </div>
-          </div>
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <p className="text-xs text-[var(--text-muted)] font-medium">Approved</p>
-            <h3 className="text-3xl font-display font-semibold">{approved}</h3>
-            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--green)]"><CheckCircle2 className="w-3 h-3" /> Ready for PO</div>
-          </div>
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <p className="text-xs text-[var(--text-muted)] font-medium">Delivered</p>
-            <h3 className="text-3xl font-display font-semibold">{delivered}</h3>
-            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--text-muted)]"><Truck className="w-3 h-3" /> This month</div>
-          </div>
-          <div className="bg-[var(--accent)] rounded-[2rem] p-6 flex flex-col justify-between drag-handle cursor-move shadow-[0_10px_30px_-10px_rgba(212,255,0,0.4)]">
-            <p className="text-xs text-black/60 font-semibold">Total PRs</p>
-            <h3 className="text-3xl font-display font-bold text-black">{purchaseRequests.length}</h3>
-            <div className="flex items-center gap-1 text-xs font-semibold text-black/60"><ArrowUpRight className="w-3 h-3" /> All time</div>
+            <select
+              className="form-select-sm"
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+            >
+              <option value="all">All status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="po-issued">PO Issued</option>
+              <option value="delivered">Delivered</option>
+              <option value="rejected">Rejected</option>
+            </select>
           </div>
         </div>
+        <Table data={filtered} columns={columns} keyExtractor={pr => pr.id} />
       </div>
-
-      {/* Purchase Requests Table */}
-      <div key="prs">
-        <Card className="h-full drag-handle cursor-move">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold">Purchase Requests</h2>
-            <button onClick={() => openModal('PR_MODAL')} className="btn-accent text-xs py-2 px-4 rounded-xl">+ New PR</button>
-          </div>
-          <div className="flex-1 overflow-auto">
-            <Table
-              data={purchaseRequests}
-              columns={[
-                { header: 'ID', accessor: 'id', render: (item) => <span className="font-semibold text-[var(--text)]">{item.id}</span> },
-                { header: 'Item', accessor: 'item' },
-                { header: 'Qty', accessor: 'qty' },
-                { header: 'Priority', render: (item) => (
-                  <Badge variant={item.priority === 'urgent' ? 'danger' : 'default'}>{item.priority.toUpperCase()}</Badge>
-                )},
-                { header: 'Status', render: (item) => (
-                  <Badge variant={item.status === 'delivered' ? 'success' : item.status === 'approved' ? 'info' : item.status === 'pending' ? 'warning' : 'default'}>
-                    {item.status.toUpperCase()}
-                  </Badge>
-                )},
-              ]}
-            />
-          </div>
-        </Card>
-      </div>
-
-      {/* Vendor Performance */}
-      <div key="vendors">
-        <Card className="h-full drag-handle cursor-move">
-          <h2 className="text-sm font-semibold mb-4">Vendor Performance</h2>
-          <div className="space-y-4 flex-1 overflow-auto">
-            {vendors.map(v => (
-              <div key={v.id} className="bg-[var(--bg3)] p-4 rounded-2xl border border-[var(--border)]">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="text-sm font-semibold text-[var(--text)]">{v.name}</div>
-                    <div className="text-xs text-[var(--text-muted)]">{v.category}</div>
-                  </div>
-                  <Badge variant={v.onTime > 85 ? 'success' : v.onTime > 70 ? 'warning' : 'danger'}>
-                    {v.onTime}% OTD
-                  </Badge>
-                </div>
-                <ProgressBar progress={v.quality} color={v.quality > 90 ? 'var(--green)' : 'var(--accent)'} size="sm" />
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </DraggableGrid>
+    </div>
   );
 };
 

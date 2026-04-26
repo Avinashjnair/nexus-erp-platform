@@ -1,4 +1,4 @@
-export type RoleId = 'management' | 'marketing' | 'purchase' | 'qaqc' | 'production' | 'store' | 'workflow' | 'reports' | 'initiate';
+export type RoleId = 'management' | 'marketing' | 'purchase' | 'qaqc' | 'production' | 'store' | 'workflow' | 'reports' | 'initiate' | 'strategic';
 
 export interface UserRole {
   role: RoleId;
@@ -157,10 +157,12 @@ export interface Feedback {
 export interface ERPDocument {
   id: string;
   title: string;
-  type: 'Drawing' | 'Specification' | 'Contract' | 'Photo';
+  type: 'Drawing' | 'Specification' | 'ITP' | 'MOM' | 'Deviation Clearance' | 'Contract' | 'Photo';
   category: string;
-  status: 'Draft' | 'Approved' | 'Superseded';
+  status: 'Draft' | 'Approved' | 'Superseded' | 'Verified';
   version: string;
+  revision?: string;
+  remarks?: string;
   parentId: string; // ProjectID or TenderID
   file: string;
   size: string;

@@ -1,111 +1,186 @@
 import React from 'react';
-import Card from '../components/ui/Card';
+import { useNexusStore } from '../store/useNexusStore';
+import StatCard from '../components/ui/StatCard';
+import Table from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import ProgressBar from '../components/ui/ProgressBar';
-import DraggableGrid from '../components/ui/DraggableGrid';
-import { useNexusStore } from '../store/useNexusStore';
-import { Factory, Wrench, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { Settings, TrendingUp, AlertTriangle, Package, Plus } from 'lucide-react';
+import type { ProductionActivity } from '../types/erp';
 
-const LAYOUTS = {
-  lg: [
-    { i: 'stats', x: 0, y: 0, w: 12, h: 2, minW: 8, minH: 2 },
-    { i: 'activities', x: 0, y: 2, w: 8, h: 5, minW: 6, minH: 4 },
-    { i: 'phases', x: 8, y: 2, w: 4, h: 5, minW: 3, minH: 4 },
-  ],
+const STATUS_COLOR: Record<string, string> = {
+  ahead:       'var(--green)',
+  'on-track':  'var(--blue)',
+  'in-progress':'var(--blue)',
+  behind:      'var(--red)',
+};
+
+const STATUS_BADGE: Record<string, 'success' | 'info' | 'danger' | 'warning'> = {
+  ahead:        'success',
+  'on-track':   'info',
+  'in-progress':'info',
+  behind:       'danger',
 };
 
 const ProductionPage: React.FC = () => {
-  const { activities, projects } = useNexusStore();
+  const { activities, updateActivityProgress, openModal, addToast } = useNexusStore();
 
-  const inProgress = activities.filter(a => a.status === 'in-progress').length;
-  const behind = activities.filter(a => a.status === 'behind').length;
-  const onTrack = activities.filter(a => a.status === 'on-track').length;
+  const running = activities.filter(a => a.status !== 'done').length;
+  const avgActual = Math.round(activities.reduce((s, a) => s + a.actual, 0) / activities.length);
+  const avgPlanned = Math.round(activities.reduce((s, a) => s + a.planned, 0) / activities.length);
+  const behind = activities.filter(a => a.actual < a.planned - 5).length;
+
+  const columns = [
+    {
+      header: 'ID',
+      accessor: (a: ProductionActivity) => (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>{a.id}</span>
+      ),
+    },
+    {
+      header: 'Activity',
+      accessor: (a: ProductionActivity) => (
+        <div>
+          <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '12px' }}>{a.name}</div>
+          <div style={{ fontSize: '10px', color: 'var(--text3)' }}>{a.phase} · {a.crew}</div>
+        </div>
+      ),
+    },
+    {
+      header: 'Progress vs plan',
+      accessor: (a: ProductionActivity) => (
+        <div style={{ minWidth: '140px' }}>
+          <ProgressBar
+            progress={(a.actual / Math.max(a.planned, 1)) * 100}
+            height="5px"
+            color={STATUS_COLOR[a.status] ?? 'var(--blue)'}
+            className="table-progress"
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text3)' }}>Actual: {a.actual}%</span>
+            <span style={{ fontSize: '10px', color: 'var(--text3)' }}>Plan: {a.planned}%</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Variance',
+      accessor: (a: ProductionActivity) => {
+        const v = a.actual - a.planned;
+        return (
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              color: v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--text3)',
+              fontWeight: 600,
+            }}
+          >
+            {v > 0 ? '+' : ''}{v}%
+          </span>
+        );
+      },
+    },
+    {
+      header: 'Status',
+      accessor: (a: ProductionActivity) => (
+        <Badge variant={STATUS_BADGE[a.status] ?? 'ghost'}>
+          {a.status.replace('-', ' ')}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Updated',
+      accessor: (a: ProductionActivity) => (
+        <span style={{ fontSize: '11px', color: 'var(--text3)' }}>{a.lastUpdated}</span>
+      ),
+    },
+    {
+      header: 'Actions',
+      accessor: (a: ProductionActivity) => (
+        <div className="table-actions">
+          <button
+            className="action-btn-sm"
+            onClick={() => {
+              const next = Math.min(100, a.actual + 5);
+              updateActivityProgress(a.id, next);
+              addToast(`${a.id} updated to ${next}%`, 'success');
+            }}
+          >
+            +5%
+          </button>
+          <button
+            className="action-btn-sm"
+            onClick={() => openModal('UPDATE_ACTIVITY_MODAL', a)}
+          >
+            Update
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <DraggableGrid layouts={LAYOUTS}>
-      {/* Stats */}
-      <div key="stats">
-        <div className="grid grid-cols-4 gap-5 h-full">
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <p className="text-xs text-[var(--text-muted)] font-medium">Active Crews</p>
-            <h3 className="text-3xl font-display font-semibold">{activities.length}</h3>
-            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--green)]"><Factory className="w-3 h-3" /> Operating</div>
-          </div>
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <p className="text-xs text-[var(--text-muted)] font-medium">In Progress</p>
-            <h3 className="text-3xl font-display font-semibold">{inProgress}</h3>
-            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--blue)]"><Wrench className="w-3 h-3" /> Active now</div>
-          </div>
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <p className="text-xs text-[var(--text-muted)] font-medium">Behind Schedule</p>
-            <h3 className="text-3xl font-display font-semibold text-[var(--red)]">{behind}</h3>
-            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--red)]"><AlertTriangle className="w-3 h-3" /> Attention</div>
-          </div>
-          <div className="bg-[var(--accent)] rounded-[2rem] p-6 flex flex-col justify-between drag-handle cursor-move shadow-[0_10px_30px_-10px_rgba(212,255,0,0.4)]">
-            <p className="text-xs text-black/60 font-semibold">On Track</p>
-            <h3 className="text-3xl font-display font-bold text-black">{onTrack}</h3>
-            <div className="flex items-center gap-1 text-xs font-semibold text-black/60"><ArrowUpRight className="w-3 h-3" /> Healthy</div>
-          </div>
+    <div className="page-fade-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Production dashboard</h1>
+          <p className="page-subtitle">Fabrication monitoring, progress tracking, and site management</p>
+        </div>
+        <div className="page-actions">
+          <button className="btn btn-ghost" onClick={() => openModal('PR_MODAL')}>
+            <Package size={14} /> Raise PR
+          </button>
+          <button className="btn btn-primary" onClick={() => addToast('Activity creation coming soon', 'info')}>
+            <Plus size={14} /> New activity
+          </button>
         </div>
       </div>
 
-      {/* Activities */}
-      <div key="activities">
-        <Card className="h-full drag-handle cursor-move">
-          <h2 className="text-sm font-semibold mb-5">Execution Tracker</h2>
-          <div className="space-y-5 flex-1 overflow-auto">
-            {activities.map(a => (
-              <div key={a.id} className="bg-[var(--bg3)] p-5 rounded-2xl border border-[var(--border)]">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="text-sm font-semibold text-[var(--text)]">{a.name}</div>
-                    <div className="text-xs text-[var(--text-muted)] mt-0.5">{a.crew} · {a.phase}</div>
-                  </div>
-                  <Badge variant={a.status === 'on-track' || a.status === 'ahead' ? 'success' : a.status === 'behind' ? 'danger' : 'info'}>
-                    {a.status.toUpperCase()}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <ProgressBar progress={a.actual} color={a.status === 'behind' ? 'var(--red)' : 'var(--accent)'} />
-                  </div>
-                  <span className="text-sm font-display font-semibold w-12 text-right">{a.actual}%</span>
-                </div>
-                <div className="flex justify-between mt-2 text-[10px] text-[var(--text-muted)] font-medium">
-                  <span>Planned: {a.planned}%</span>
-                  <span>{a.lastUpdated}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+      <div className="stats-grid gap-b">
+        <StatCard
+          label="Activities running"
+          value={running}
+          delta="Across 2 shifts"
+          deltaType="neutral"
+          icon={<Settings size={18} />}
+          accentColor="var(--orange)"
+        />
+        <StatCard
+          label="Avg. progress"
+          value={`${avgActual}%`}
+          delta={`${avgActual >= avgPlanned ? 'Above' : 'Below'} plan (${avgPlanned}%)`}
+          deltaType={avgActual >= avgPlanned ? 'up' : 'down'}
+          icon={<TrendingUp size={18} />}
+          accentColor="var(--green)"
+        />
+        <StatCard
+          label="Behind schedule"
+          value={behind}
+          delta="Activities need attention"
+          deltaType={behind > 0 ? 'down' : 'neutral'}
+          icon={<AlertTriangle size={18} />}
+          accentColor="var(--red)"
+        />
+        <StatCard
+          label="Materials consumed"
+          value="18.4T"
+          delta="Steel this week"
+          deltaType="neutral"
+          icon={<Package size={18} />}
+          accentColor="var(--amber)"
+        />
       </div>
 
-      {/* Project Phases */}
-      <div key="phases">
-        <Card className="h-full drag-handle cursor-move">
-          <h2 className="text-sm font-semibold mb-5">Project Milestones</h2>
-          <div className="space-y-5 flex-1 overflow-auto">
-            {projects.map(p => (
-              <div key={p.id} className="bg-[var(--bg3)] p-5 rounded-2xl border border-[var(--border)]">
-                <div className="text-sm font-semibold text-[var(--text)] mb-1">{p.title}</div>
-                <div className="text-xs text-[var(--text-muted)] mb-3">{p.client}</div>
-                <ProgressBar progress={p.progress} showValue color="var(--accent)" />
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {p.phases.map((phase, idx) => (
-                    <span key={idx} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      idx < p.currentPhase ? 'bg-[var(--accent)] text-black' : 
-                      idx === p.currentPhase ? 'bg-black text-white' : 
-                      'bg-[var(--bg4)] text-[var(--text-muted)]'
-                    }`}>{phase}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Production status</div>
+            <div className="card-sub">Click +5% to log quick progress updates</div>
           </div>
-        </Card>
+        </div>
+        <Table data={activities} columns={columns} keyExtractor={a => a.id} />
       </div>
-    </DraggableGrid>
+    </div>
   );
 };
 

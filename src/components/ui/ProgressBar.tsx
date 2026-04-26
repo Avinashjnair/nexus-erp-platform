@@ -1,41 +1,39 @@
 import React from 'react';
-import { cn } from '../../lib/utils';
 
 interface ProgressBarProps {
   progress: number;
   color?: string;
-  showValue?: boolean;
-  showLabel?: string;
-  size?: 'sm' | 'md' | 'lg';
+  /** Height as CSS string e.g. "6px" OR as number (treated as px) */
+  height?: string | number;
   className?: string;
+  showValue?: boolean;
+  /** Alias for showValue — some pages use showLabel */
+  showLabel?: boolean;
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ 
-  progress, 
-  color = 'var(--accent)', 
+const ProgressBar: React.FC<ProgressBarProps> = ({
+  progress,
+  color = 'var(--accent)',
+  height = '6px',
+  className = '',
   showValue = false,
-  showLabel,
-  size = 'md',
-  className
+  showLabel = false,
 }) => {
-  const heights: Record<string, string> = {
-    sm: 'h-1.5',
-    md: 'h-2',
-    lg: 'h-6'
-  };
+  const clampedProgress = Math.min(100, Math.max(0, progress));
+  const heightStr = typeof height === 'number' ? `${height}px` : height;
+  const shouldShowValue = showValue || showLabel;
 
   return (
-    <div className={cn("w-full", className)}>
-      {(showLabel || showValue) && (
-        <div className="flex justify-between mb-2">
-          {showLabel && <span className="text-xs font-medium text-[var(--text-muted)]">{showLabel}</span>}
-          {showValue && <span className="text-xs font-semibold text-[var(--text)]">{progress}%</span>}
+    <div className={`progress-container ${className}`} style={{ width: '100%' }}>
+      {shouldShowValue && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 600, color }}>{clampedProgress}%</span>
         </div>
       )}
-      <div className={cn("w-full bg-[#f4f4f4] rounded-full overflow-hidden", heights[size])}>
-        <div 
-          className="h-full rounded-full transition-all duration-700 ease-out"
-          style={{ width: `${Math.min(100, Math.max(0, progress))}%`, backgroundColor: color }}
+      <div className="progress-bar" style={{ height: heightStr }}>
+        <div
+          className="progress-fill"
+          style={{ width: `${clampedProgress}%`, background: color }}
         />
       </div>
     </div>

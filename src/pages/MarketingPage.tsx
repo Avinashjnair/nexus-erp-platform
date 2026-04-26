@@ -1,138 +1,262 @@
-import React from 'react';
-import Card from '../components/ui/Card';
+import React, { useState } from 'react';
+import { useNexusStore } from '../store/useNexusStore';
+import StatCard from '../components/ui/StatCard';
+import Table from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import ProgressBar from '../components/ui/ProgressBar';
-import DraggableGrid from '../components/ui/DraggableGrid';
-import Table from '../components/ui/Table';
-import { useNexusStore } from '../store/useNexusStore';
-import { Target, ArrowUpRight, DollarSign, Briefcase } from 'lucide-react';
+import { TrendingUp, DollarSign, Clock, Trophy, Plus, ExternalLink } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
+import type { Tender } from '../types/erp';
 
-const LAYOUTS = {
-  lg: [
-    { i: 'stats', x: 0, y: 0, w: 12, h: 2, minW: 8, minH: 2 },
-    { i: 'pipeline', x: 0, y: 2, w: 7, h: 5, minW: 5, minH: 4 },
-    { i: 'quotes', x: 7, y: 2, w: 5, h: 5, minW: 4, minH: 4 },
-    { i: 'feedback', x: 0, y: 7, w: 12, h: 4, minW: 8, minH: 3 },
-  ],
+const STATUS_BADGE: Record<string, 'ghost' | 'info' | 'success' | 'danger'> = {
+  drafting: 'ghost',
+  submitted: 'info',
+  won: 'success',
+  lost: 'danger',
 };
 
 const MarketingPage: React.FC = () => {
-  const { tenders, quotations, feedback } = useNexusStore();
+  const { tenders, vendors, addToast } = useNexusStore();
+  const [filter, setFilter] = useState<string>('all');
 
-  const pipelineValue = tenders.reduce((s, t) => s + t.value, 0);
-  const wonValue = tenders.filter(t => t.status === 'won').reduce((s, t) => s + t.value, 0);
-  const winRate = tenders.length ? Math.round((tenders.filter(t => t.status === 'won').length / tenders.length) * 100) : 0;
+  const active = tenders.filter(t => t.status === 'drafting' || t.status === 'submitted');
+  const won    = tenders.filter(t => t.status === 'won');
+  const pipeline = active.reduce((s, t) => s + t.value, 0);
+  const wonValue = won.reduce((s, t) => s + t.value, 0);
+  const closingSoon = active.filter(t => {
+    const days = (new Date(t.deadline).getTime() - Date.now()) / 86400000;
+    return days <= 14;
+  }).length;
+
+  const filtered = filter === 'all' ? tenders : tenders.filter(t => t.status === filter);
+
+  const columns = [
+    {
+      header: 'Ref',
+      accessor: (t: Tender) => (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text)' }}>
+          {t.ref}
+        </span>
+      ),
+    },
+    { header: 'Client', accessor: 'client' as keyof Tender },
+    { header: 'Description', accessor: 'title' as keyof Tender },
+    {
+      header: 'Value (AED)',
+      accessor: (t: Tender) => (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
+          {formatCurrency(t.value)}
+        </span>
+      ),
+    },
+    { header: 'Deadline', accessor: 'deadline' as keyof Tender },
+    {
+      header: 'Win prob.',
+      accessor: (t: Tender) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '90px' }}>
+          <ProgressBar progress={t.probability} color="var(--blue)" height="5px" className="table-progress" />
+          <span style={{ fontSize: '10px', color: 'var(--text3)', minWidth: '28px' }}>
+            {t.probability}%
+          </span>
+        </div>
+      ),
+    },
+    {
+      header: 'Status',
+      accessor: (t: Tender) => (
+        <Badge variant={STATUS_BADGE[t.status] ?? 'ghost'}>
+          {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Actions',
+      accessor: (t: Tender) => (
+        <div className="table-actions">
+          <button
+            className="action-btn-sm"
+            onClick={() => addToast(`Opening tender ${t.ref}`, 'info')}
+          >
+            <ExternalLink size={12} /> View
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const topClients = [
+    { name: 'ADNOC Offshore',  projects: 3, value: 34100000, badge: 'success' as const },
+    { name: 'TAQA Arabia',     projects: 1, value: 9200000,  badge: 'info'    as const },
+    { name: 'KIZAD Authority', projects: 2, value: 9100000,  badge: 'info'    as const },
+    { name: 'Mubadala Energy', projects: 1, value: 6800000,  badge: 'ghost'   as const },
+  ];
 
   return (
-    <DraggableGrid layouts={LAYOUTS}>
-      {/* Stats Row */}
-      <div key="stats">
-        <div className="grid grid-cols-4 gap-5 h-full">
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-[var(--text-muted)] font-medium">Pipeline Value</p>
-              <div className="w-10 h-10 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent-dark)]"><DollarSign className="w-5 h-5" /></div>
-            </div>
-            <h3 className="text-2xl font-display font-semibold mt-2">{formatCurrency(pipelineValue)}</h3>
+    <div className="page-fade-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Marketing & Tendering</h1>
+          <p className="page-subtitle">Bid pipeline, win tracking, and client relationship management</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => addToast('Tender creation coming soon', 'info')}>
+          <Plus size={14} /> New Tender
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="stats-grid gap-b">
+        <StatCard
+          label="Active Tenders"
+          value={active.length}
+          delta="↑ 2 submitted this month"
+          deltaType="up"
+          icon={<TrendingUp size={18} />}
+          accentColor="var(--blue)"
+        />
+        <StatCard
+          label="Win Rate"
+          value="38%"
+          delta="↑ 5% vs last quarter"
+          deltaType="up"
+          icon={<Trophy size={18} />}
+          accentColor="var(--green)"
+        />
+        <StatCard
+          label="Pipeline Value"
+          value={formatCurrency(pipeline)}
+          delta={`${active.length} bids active`}
+          deltaType="neutral"
+          icon={<DollarSign size={18} />}
+          accentColor="var(--accent)"
+        />
+        <StatCard
+          label="Closing Soon"
+          value={closingSoon}
+          delta="Within 14 days"
+          deltaType={closingSoon > 0 ? 'down' : 'neutral'}
+          icon={<Clock size={18} />}
+          accentColor="var(--red)"
+        />
+      </div>
+
+      {/* Tender table */}
+      <div className="card gap-b">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Tender Pipeline</div>
+            <div className="card-sub">Track bid status and submission deadlines</div>
           </div>
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-[var(--text-muted)] font-medium">Active Tenders</p>
-              <div className="w-10 h-10 rounded-2xl bg-[var(--blue-dim)] flex items-center justify-center text-[var(--blue)]"><Briefcase className="w-5 h-5" /></div>
-            </div>
-            <h3 className="text-2xl font-display font-semibold mt-2">{tenders.filter(t => t.status !== 'won' && t.status !== 'lost').length}</h3>
-          </div>
-          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-[var(--text-muted)] font-medium">Win Rate</p>
-              <div className="w-10 h-10 rounded-2xl bg-[var(--green-dim)] flex items-center justify-center text-[var(--green)]"><Target className="w-5 h-5" /></div>
-            </div>
-            <h3 className="text-2xl font-display font-semibold mt-2">{winRate}%</h3>
-          </div>
-          <div className="bg-[var(--accent)] rounded-[2rem] p-6 flex flex-col justify-between drag-handle cursor-move shadow-[0_10px_30px_-10px_rgba(212,255,0,0.4)]">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-black/60 font-semibold">Won Value</p>
-              <ArrowUpRight className="w-5 h-5 text-black/40" />
-            </div>
-            <h3 className="text-2xl font-display font-bold text-black mt-2">{formatCurrency(wonValue)}</h3>
+          <div className="card-actions">
+            <select
+              className="form-select-sm"
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="drafting">Drafting</option>
+              <option value="submitted">Submitted</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
           </div>
         </div>
+        <Table data={filtered} columns={columns} keyExtractor={t => t.id} />
       </div>
 
-      {/* Tender Pipeline */}
-      <div key="pipeline">
-        <Card className="h-full drag-handle cursor-move">
-          <h2 className="text-sm font-semibold mb-4">Tender Pipeline</h2>
-          <div className="flex-1 overflow-auto">
-            <Table
-              data={tenders}
-              columns={[
-                { header: 'Reference', accessor: 'ref', render: (item) => <span className="font-semibold text-[var(--text)]">{item.ref}</span> },
-                { header: 'Client', accessor: 'client' },
-                { header: 'Value', render: (item) => formatCurrency(item.value) },
-                { header: 'Status', render: (item) => (
-                  <Badge variant={item.status === 'won' ? 'success' : item.status === 'lost' ? 'danger' : item.status === 'submitted' ? 'info' : 'warning'}>
-                    {item.status.toUpperCase()}
-                  </Badge>
-                )},
-                { header: 'Probability', render: (item) => (
-                  <div className="w-24">
-                    <ProgressBar progress={item.probability} color={item.probability > 60 ? 'var(--green)' : 'var(--accent)'} size="sm" />
-                  </div>
-                )},
-              ]}
-            />
+      {/* Bid performance + Top clients */}
+      <div className="grid-2">
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Bid performance (YTD)</div>
+            </div>
           </div>
-        </Card>
-      </div>
 
-      {/* Quotations */}
-      <div key="quotes">
-        <Card className="h-full drag-handle cursor-move">
-          <h2 className="text-sm font-semibold mb-4">Recent Quotations</h2>
-          <div className="space-y-4 flex-1">
-            {(quotations || []).map(q => (
-              <div key={q.id} className="bg-[var(--bg3)] p-4 rounded-2xl border border-[var(--border)] flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-semibold text-[var(--text)]">{q.title}</div>
-                  <div className="text-xs text-[var(--text-muted)] mt-1">{q.client} · v{q.version}</div>
-                </div>
-                <Badge variant={q.status === 'accepted' ? 'success' : q.status === 'sent' ? 'info' : 'warning'}>
-                  {q.status.toUpperCase()}
-                </Badge>
+          {[
+            { label: 'Tenders submitted', value: 8,  max: 10, color: 'var(--blue)'  },
+            { label: 'Tenders won',        value: 3,  max: 8,  color: 'var(--green)' },
+            { label: 'In final evaluation',value: 2,  max: 8,  color: 'var(--amber)' },
+            { label: 'Under review',        value: 2,  max: 8,  color: 'var(--teal)'  },
+          ].map(row => (
+            <div key={row.label} style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--text2)' }}>{row.label}</span>
+                <span style={{ color: 'var(--text)', fontWeight: 600 }}>{row.value}</span>
               </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+              <ProgressBar progress={(row.value / row.max) * 100} color={row.color} height="5px" />
+            </div>
+          ))}
 
-      {/* Client Feedback */}
-      <div key="feedback">
-        <Card className="h-full drag-handle cursor-move">
-          <h2 className="text-sm font-semibold mb-4">Client Feedback</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-            {(feedback || []).map(f => (
-              <div key={f.id} className="bg-[var(--bg3)] p-5 rounded-2xl border border-[var(--border)]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold">{f.client}</span>
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div key={i} className={`w-2 h-2 rounded-full ${i < f.rating ? 'bg-[var(--accent)]' : 'bg-[#eee]'}`} />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-[var(--text2)] leading-relaxed">{f.comment}</p>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">{f.date}</span>
-                  <Badge variant={f.status === 'resolved' ? 'success' : 'warning'}>{f.status}</Badge>
+          <div
+            style={{
+              background: 'var(--bg3)',
+              borderRadius: 'var(--radius)',
+              padding: '14px',
+              marginTop: '8px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Total won value
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-head)',
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  color: 'var(--green)',
+                  marginTop: '2px',
+                }}
+              >
+                {formatCurrency(wonValue)}
+              </div>
+            </div>
+            <Trophy size={28} style={{ color: 'var(--green)', opacity: 0.4 }} />
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <div className="card-title">Top clients</div>
+              <div className="card-sub">By total contract value</div>
+            </div>
+          </div>
+
+          {topClients.map(c => (
+            <div key={c.name} className="vendor-card" style={{ marginBottom: '10px' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: 'var(--bg4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: 'var(--text3)',
+                }}
+              >
+                {c.name.charAt(0)}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="vendor-name">{c.name}</div>
+                <div className="vendor-cat">
+                  {c.projects} project{c.projects !== 1 ? 's' : ''} · {formatCurrency(c.value)}
                 </div>
               </div>
-            ))}
-          </div>
-        </Card>
+              <Badge variant={c.badge}>Active</Badge>
+            </div>
+          ))}
+        </div>
       </div>
-    </DraggableGrid>
+    </div>
   );
 };
 

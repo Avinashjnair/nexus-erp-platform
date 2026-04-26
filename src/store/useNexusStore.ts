@@ -40,8 +40,42 @@ interface NexusState {
   // Toast State
   toasts: Toast[];
 
+  deptEfficiency: {
+    name: string;
+    utilization: number;
+    onTime: number;
+    completionTime: number; // in days
+  }[];
+  financialStats: {
+    period: string;
+    revenue: number;
+    cost: number;
+    loss: number;
+  }[];
+
+  costVariance: { phase: string; budget: number; actual: number; labor: number; material: number }[];
+  vendorSpend: { name: string; value: number }[];
+  commodityImpact: { material: string; change: number; impact: number }[];
+  capacityHeatmap: { phase: string; load: number; capacity: number; status: 'optimal' | 'nearing' | 'over' }[];
+  
+  hseStats: { ltiDays: number; incidentHistory: { month: string; misses: number; incidents: number }[] };
+  laborCosts: { dept: string; regular: number; overtime: number; otCost: number }[];
+  bidPipeline: { stage: string; value: number; count: number }[];
+  vendorCompliance: { category: string; value: number; color: string }[];
+
+  // Departmental Performance
+  procurement: { ppv: number; otif: { vendor: string; rate: number }[] };
+  engineering: { ecoTrend: { week: string; count: number }[]; releaseAdherence: number };
+  production: { cycleTime: { stage: string; estimated: number; actual: number }[]; machineLoad: { bay: string; load: number }[] };
+  quality: { fpy: number; ncrResolution: { month: string; days: number }[] };
+  projectControls: { cpi: number; spi: number };
+
+  notifications: { id: string; type: 'success' | 'warning' | 'error' | 'info'; title: string; text: string; time: string; read: boolean }[];
+
   // Actions
   setRole: (role: RoleId) => void;
+  addNotification: (notif: { type: 'success' | 'warning' | 'error' | 'info'; title: string; text: string }) => void;
+  markAsRead: (id: string) => void;
   setCurrentProject: (id: string) => void;
   login: (role: RoleId) => void;
   logout: () => void;
@@ -90,7 +124,8 @@ export const useNexusStore = create<NexusState>()(
     store:      { role: 'store', name: 'Rajan Pillai', initials: 'RP', title: 'Store Keeper', color: '#8b5cf6' },
     workflow:   { role: 'workflow', name: 'System Automator', initials: 'SA', title: 'Workflow Engine', color: '#14b8a6' },
     reports:    { role: 'reports', name: 'Data Analyst', initials: 'DA', title: 'Intelligence Lead', color: '#4f7cff' },
-    initiate:   { role: 'initiate', name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' }
+    initiate:   { role: 'initiate', name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' },
+    strategic:  { role: 'strategic', name: 'Data Analyst', initials: 'DA', title: 'Intelligence Lead', color: '#4f7cff' }
   },
 
   projects: [
@@ -200,7 +235,151 @@ export const useNexusStore = create<NexusState>()(
     { type:'info', title:'PR-0813 Approved', text:'Carbon Steel Plate 25mm approved by Ahmed M.', time:'2 days ago', dept:'Management' }
   ],
 
+  deptEfficiency: [
+    { name: 'Marketing',   utilization: 65, onTime: 92, completionTime: 14 },
+    { name: 'Purchase',    utilization: 82, onTime: 78, completionTime: 8 },
+    { name: 'Production',  utilization: 94, onTime: 85, completionTime: 22 },
+    { name: 'QA/QC',       utilization: 76, onTime: 96, completionTime: 3 },
+    { name: 'Store',       utilization: 60, onTime: 98, completionTime: 2 },
+  ],
+
+  financialStats: [
+    { period: 'Jan', revenue: 1200000, cost: 950000, loss: 45000 },
+    { period: 'Feb', revenue: 1500000, cost: 1100000, loss: 38000 },
+    { period: 'Mar', revenue: 1100000, cost: 980000, loss: 52000 },
+    { period: 'Apr', revenue: 1800000, cost: 1400000, loss: 31000 },
+    { period: 'May', revenue: 2100000, cost: 1550000, loss: 24000 },
+  ],
+
+  costVariance: [
+    { phase: 'Engineering', budget: 500000, actual: 480000, labor: 300000, material: 180000 },
+    { phase: 'Procurement', budget: 1200000, actual: 1250000, labor: 100000, material: 1150000 },
+    { phase: 'Fabrication', budget: 2800000, actual: 3100000, labor: 2200000, material: 900000 },
+    { phase: 'QA/QC',       budget: 300000, actual: 290000, labor: 250000, material: 40000 },
+    { phase: 'Logistics',   budget: 450000, actual: 470000, labor: 150000, material: 320000 },
+  ],
+
+  vendorSpend: [
+    { name: 'Gulf Steel Trading', value: 840000 },
+    { name: 'ABB Gulf FZE',       value: 280000 },
+    { name: 'Al Fajr Supply',     value: 340000 },
+    { name: 'National Fasteners', value: 58000 },
+    { name: 'Techno Coatings',    value: 120000 },
+  ],
+
+  commodityImpact: [
+    { material: 'Carbon Steel', change: 4.2, impact: -42000 },
+    { material: 'Stainless Steel', change: -1.5, impact: 12000 },
+    { material: 'Copper', change: 8.4, impact: -18000 },
+    { material: 'Aluminum', change: 2.1, impact: -5000 },
+  ],
+
+  capacityHeatmap: [
+    { phase: 'Procurement', load: 85, capacity: 100, status: 'optimal' },
+    { phase: 'Fabrication', load: 110, capacity: 100, status: 'over' },
+    { phase: 'QA/QC', load: 92, capacity: 100, status: 'nearing' },
+    { phase: 'Delivery', load: 45, capacity: 100, status: 'optimal' },
+  ],
+
+  hseStats: {
+    ltiDays: 442,
+    incidentHistory: [
+      { month: 'Jan', misses: 4, incidents: 0 },
+      { month: 'Feb', misses: 2, incidents: 1 },
+      { month: 'Mar', misses: 5, incidents: 0 },
+      { month: 'Apr', misses: 3, incidents: 0 },
+      { month: 'May', misses: 1, incidents: 0 },
+    ]
+  },
+
+  laborCosts: [
+    { dept: 'Engineering', regular: 2400, overtime: 120, otCost: 18000 },
+    { dept: 'Production',  regular: 8500, overtime: 1400, otCost: 125000 },
+    { dept: 'QA/QC',       regular: 1200, overtime: 80, otCost: 9500 },
+    { dept: 'Logistics',   regular: 950, overtime: 210, otCost: 22000 },
+  ],
+
+  bidPipeline: [
+    { stage: 'Drafting',     value: 45000000, count: 12 },
+    { stage: 'Technical',    value: 28000000, count: 8 },
+    { stage: 'Commercial',   value: 15000000, count: 4 },
+    { stage: 'Negotiation',  value: 8500000,  count: 2 },
+  ],
+
+  vendorCompliance: [
+    { category: 'Compliant', value: 82, color: 'var(--green)' },
+    { category: 'Expiring',  value: 12, color: 'var(--amber)' },
+    { category: 'Expired',   value: 6,  color: 'var(--red)' },
+  ],
+
+  procurement: {
+    ppv: 94.2,
+    otif: [
+      { vendor: 'Gulf Steel', rate: 98 },
+      { vendor: 'ABB Gulf', rate: 92 },
+      { vendor: 'Techno', rate: 85 },
+      { vendor: 'Al Fajr', rate: 64 },
+      { vendor: 'National', rate: 42 },
+    ]
+  },
+
+  engineering: {
+    ecoTrend: [
+      { week: 'W12', count: 4 },
+      { week: 'W13', count: 8 },
+      { week: 'W14', count: 3 },
+      { week: 'W15', count: 12 },
+      { week: 'W16', count: 6 },
+    ],
+    releaseAdherence: 88.5
+  },
+
+  production: {
+    cycleTime: [
+      { stage: 'Cutting', estimated: 40, actual: 42 },
+      { stage: 'Fit-up', estimated: 120, actual: 145 },
+      { stage: 'Welding', estimated: 240, actual: 230 },
+      { stage: 'Painting', estimated: 80, actual: 95 },
+    ],
+    machineLoad: [
+      { bay: 'Bay 1', load: 85 },
+      { bay: 'Bay 2', load: 110 },
+      { bay: 'Bay 3', load: 92 },
+      { bay: 'Bay 4', load: 45 },
+    ]
+  },
+
+  quality: {
+    fpy: 96.4,
+    ncrResolution: [
+      { month: 'Jan', days: 12 },
+      { month: 'Feb', days: 14 },
+      { month: 'Mar', days: 10 },
+      { month: 'Apr', days: 8 },
+      { month: 'May', days: 6 },
+    ]
+  },
+
+  projectControls: {
+    cpi: 0.94,
+    spi: 0.82
+  },
+
+  notifications: [
+    { id: '1', type: 'warning', title: 'Schedule Alert', text: 'SPI has dropped below 0.85 on Project P2.', time: '2m ago', read: false },
+    { id: '2', type: 'info', title: 'System Update', text: 'Weekly executive summary is ready.', time: '1h ago', read: false },
+  ],
+
   setRole: (role) => set({ currentRole: role }),
+  addNotification: (notif) => set((state) => ({
+    notifications: [
+      { id: Math.random().toString(36).substr(2, 9), ...notif, time: 'Just now', read: false },
+      ...state.notifications
+    ]
+  })),
+  markAsRead: (id) => set((state) => ({
+    notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
+  })),
   setCurrentProject: (id) => set({ currentProject: id }),
   login: (role) => set((state) => ({ currentUser: state.roles[role], currentRole: role })),
   logout: () => set({ currentUser: null }),
