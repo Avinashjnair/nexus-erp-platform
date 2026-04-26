@@ -1,132 +1,110 @@
-import React, { useState } from 'react';
-import { useNexusStore } from '../store/useNexusStore';
-import StatCard from '../components/ui/StatCard';
-import Table from '../components/ui/Table';
+import React from 'react';
+import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
-import { Warehouse, Package, ArrowDownRight, ArrowUpRight, Search, Plus, MoreHorizontal } from 'lucide-react';
+import ProgressBar from '../components/ui/ProgressBar';
+import DraggableGrid from '../components/ui/DraggableGrid';
+import Table from '../components/ui/Table';
+import { useNexusStore } from '../store/useNexusStore';
+import { Package, AlertTriangle, Truck, ArrowUpRight } from 'lucide-react';
+
+const LAYOUTS = {
+  lg: [
+    { i: 'stats', x: 0, y: 0, w: 12, h: 2, minW: 8, minH: 2 },
+    { i: 'inventory', x: 0, y: 2, w: 7, h: 5, minW: 5, minH: 4 },
+    { i: 'requests', x: 7, y: 2, w: 5, h: 5, minW: 4, minH: 4 },
+  ],
+};
 
 const StorePage: React.FC = () => {
-  const { inventory, materialRequests, issueMR, openModal, addToast } = useNexusStore();
-  const [search, setSearch] = useState('');
+  const { inventory, materialRequests, openModal } = useNexusStore();
 
-  const stats = {
-    totalSKUs: inventory.length,
-    criticalItems: inventory.filter(i => i.status === 'critical').length,
-    pendingMR: materialRequests.filter(m => m.status === 'pending').length,
-    inventoryValue: '1.2M AED'
-  };
-
-  const filteredInventory = inventory.filter(i => 
-    i.desc.toLowerCase().includes(search.toLowerCase()) || i.id.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const invColumns = [
-    { header: 'SKU Ref', render: (i: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700, fontSize: '13px' }}>{i.id}</span> },
-    { header: 'Material Description', accessor: 'desc', width: '35%' },
-    { header: 'Category', accessor: 'category' },
-    { header: 'In Stock', render: (i: any) => <span style={{ fontWeight: 700 }}>{i.onHand} {i.unit}</span> },
-    { header: 'Status', render: (i: any) => (
-      <Badge variant={i.status === 'critical' ? 'danger' : i.status === 'low' ? 'warning' : 'success'}>
-        {i.status.toUpperCase()}
-      </Badge>
-    )},
-    { header: 'Location', accessor: 'location' }
-  ];
+  const criticalItems = inventory.filter(i => i.status === 'critical').length;
+  const lowItems = inventory.filter(i => i.status === 'low').length;
+  const pendingMRs = materialRequests.filter(m => m.status === 'pending').length;
 
   return (
-    <div className="animate-in">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <Badge variant="success" style={{ marginBottom: '8px' }}>Logistics & Warehouse</Badge>
-          <h1 style={{ margin: 0 }}>Inventory Control</h1>
-          <p className="card-sub">Stock level monitoring, material issuance, and location tracking</p>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="theme-toggle" style={{ width: 'auto', padding: '0 16px', gap: '8px' }} onClick={() => openModal('stock_count')}>
-            <Package size={16} /> Stock Count
-          </button>
-          <button className="btn-primary" onClick={() => openModal('mr_create')}>
-            <Plus size={18} style={{ marginRight: '8px' }} /> Issue Material
-          </button>
+    <DraggableGrid layouts={LAYOUTS}>
+      {/* Stats */}
+      <div key="stats">
+        <div className="grid grid-cols-4 gap-5 h-full">
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Total SKUs</p>
+            <h3 className="text-3xl font-display font-semibold">{inventory.length}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--green)]"><Package className="w-3 h-3" /> Tracked</div>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Critical Stock</p>
+            <h3 className="text-3xl font-display font-semibold text-[var(--red)]">{criticalItems}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--red)]"><AlertTriangle className="w-3 h-3" /> Reorder now</div>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Pending MRs</p>
+            <h3 className="text-3xl font-display font-semibold">{pendingMRs}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--amber)]"><Truck className="w-3 h-3" /> Awaiting</div>
+          </div>
+          <div className="bg-[var(--accent)] rounded-[2rem] p-6 flex flex-col justify-between drag-handle cursor-move shadow-[0_10px_30px_-10px_rgba(212,255,0,0.4)]">
+            <p className="text-xs text-black/60 font-semibold">Low Stock Items</p>
+            <h3 className="text-3xl font-display font-bold text-black">{lowItems}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-black/60"><ArrowUpRight className="w-3 h-3" /> Monitor</div>
+          </div>
         </div>
       </div>
 
-      <div className="stats-grid">
-        <StatCard label="Total SKUs" value={stats.totalSKUs} icon={<Warehouse size={18} />} accentColor="#3b82f6" />
-        <StatCard label="Critical Stock" value={stats.criticalItems} trend={{ value: 'Review', type: 'down' }} icon={<ArrowDownRight size={18} />} accentColor="#ef4444" />
-        <StatCard label="Pending Requests" value={stats.pendingMR} trend={{ value: 'Active', type: 'up' }} icon={<ArrowUpRight size={18} />} accentColor="#f59e0b" />
-        <StatCard label="Holding Value" value={stats.inventoryValue} icon={<Package size={18} />} accentColor="#10b981" />
-      </div>
-
-      <div className="card gap-b">
-        <div className="card-header">
-          <div>
-            <h4 className="card-title">Live Inventory Ledger</h4>
-            <p className="card-sub">Tracking {filteredInventory.length} unique material items</p>
-          </div>
-          <div className="topbar-search" style={{ width: '280px', backgroundColor: 'var(--bg-base)' }}>
-            <Search size={14} color="var(--text-tertiary)" />
-            <input type="text" placeholder="Search by SKU or Description..." value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
-        </div>
-        <Table data={filteredInventory} columns={invColumns} />
-      </div>
-
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h4 className="card-title">Pending Material Requests</h4>
-              <p className="card-sub">Departmental withdrawal requisitions</p>
-            </div>
-          </div>
-          <Table 
-            data={materialRequests.filter(m => m.status === 'pending')} 
-            columns={[
-              { header: 'MR ID', render: (m: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700 }}>{m.id}</span> },
-              { header: 'Item', accessor: 'item' },
-              { header: 'Qty', accessor: 'qty' },
-              { header: 'Action', render: (m: any) => (
-                <button 
-                  className="theme-toggle" 
-                  style={{ width: 'auto', padding: '0 12px', fontSize: '11px', fontWeight: 700, color: 'var(--primary)' }}
-                  onClick={() => { issueMR(m.id); addToast(`Materials issued for ${m.id}`, 'success'); }}
-                >
-                  ISSUE
-                </button>
-              )}
-            ]} 
-          />
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h4 className="card-title">Stock Movements</h4>
-              <p className="card-sub">Recent log from store and logistics</p>
-            </div>
-          </div>
-          <div className="timeline">
-            {useNexusStore.getState().activityLog
-              .filter(a => a.dept === 'Store' || a.dept === 'Purchase')
-              .slice(0, 5)
-              .map((a, i) => (
-                <div key={i} className="tl-item">
-                  <div style={{ position: 'relative' }}>
-                    <div className="tl-dot" style={{ backgroundColor: a.type === 'success' ? 'var(--success)' : a.type === 'warning' ? 'var(--warning)' : 'var(--primary)' }}></div>
-                    {i < 4 && <div className="tl-line"></div>}
+      {/* Inventory Table */}
+      <div key="inventory">
+        <Card className="h-full drag-handle cursor-move">
+          <h2 className="text-sm font-semibold mb-4">Inventory Status</h2>
+          <div className="flex-1 overflow-auto">
+            <Table
+              data={inventory}
+              columns={[
+                { header: 'SKU', accessor: 'id', render: (item) => <span className="font-semibold text-[var(--text)]">{item.id}</span> },
+                { header: 'Description', accessor: 'desc' },
+                { header: 'On Hand', render: (item) => `${item.onHand} ${item.unit}` },
+                { header: 'Location', accessor: 'location' },
+                { header: 'Stock Level', render: (item) => (
+                  <div className="w-20">
+                    <ProgressBar 
+                      progress={Math.round((item.onHand / item.maxStock) * 100)} 
+                      color={item.status === 'critical' ? 'var(--red)' : item.status === 'low' ? 'var(--amber)' : 'var(--green)'} 
+                      size="sm" 
+                    />
                   </div>
-                  <div>
-                    <div className="tl-label">{a.title}</div>
-                    <div className="tl-text">{a.text}</div>
-                    <div className="tl-time">{a.time}</div>
-                  </div>
+                )},
+                { header: 'Status', render: (item) => (
+                  <Badge variant={item.status === 'ok' ? 'success' : item.status === 'low' ? 'warning' : 'danger'}>
+                    {item.status.toUpperCase()}
+                  </Badge>
+                )},
+              ]}
+            />
+          </div>
+        </Card>
+      </div>
+
+      {/* Material Requests */}
+      <div key="requests">
+        <Card className="h-full drag-handle cursor-move">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold">Material Requests</h2>
+            <button onClick={() => openModal('MR_MODAL')} className="btn-accent text-xs py-2 px-4 rounded-xl">+ New MR</button>
+          </div>
+          <div className="space-y-3 flex-1 overflow-auto">
+            {materialRequests.map(m => (
+              <div key={m.id} className="bg-[var(--bg3)] p-4 rounded-2xl border border-[var(--border)] flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-semibold text-[var(--text)]">{m.item}</div>
+                  <div className="text-xs text-[var(--text-muted)] mt-0.5">{m.id} · {m.qty} · From {m.from}</div>
                 </div>
-              ))}
+                <Badge variant={m.status === 'issued' ? 'success' : m.status === 'partial' ? 'warning' : 'info'}>
+                  {m.status.toUpperCase()}
+                </Badge>
+              </div>
+            ))}
           </div>
-        </div>
+        </Card>
       </div>
-    </div>
+    </DraggableGrid>
   );
 };
 

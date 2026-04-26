@@ -1,242 +1,138 @@
-import React, { useState } from 'react';
-import { useNexusStore } from '../store/useNexusStore';
-import StatCard from '../components/ui/StatCard';
-import Table from '../components/ui/Table';
+import React from 'react';
+import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import ProgressBar from '../components/ui/ProgressBar';
-import MarketingProjectDetail from '../components/marketing/MarketingProjectDetail';
-import { 
-  FileText, TrendingUp, Briefcase, Star, Clock, 
-  Layers, CheckSquare, Target, Users, Search, 
-  Filter, Plus, Download, History, Shield, 
-  MessageSquare, FileCode, FileUp, CheckCircle, Eye,
-  Sparkles, Zap
-} from 'lucide-react';
+import DraggableGrid from '../components/ui/DraggableGrid';
+import Table from '../components/ui/Table';
+import { useNexusStore } from '../store/useNexusStore';
+import { Target, ArrowUpRight, DollarSign, Briefcase } from 'lucide-react';
+import { formatCurrency } from '../utils/formatters';
+
+const LAYOUTS = {
+  lg: [
+    { i: 'stats', x: 0, y: 0, w: 12, h: 2, minW: 8, minH: 2 },
+    { i: 'pipeline', x: 0, y: 2, w: 7, h: 5, minW: 5, minH: 4 },
+    { i: 'quotes', x: 7, y: 2, w: 5, h: 5, minW: 4, minH: 4 },
+    { i: 'feedback', x: 0, y: 7, w: 12, h: 4, minW: 8, minH: 3 },
+  ],
+};
 
 const MarketingPage: React.FC = () => {
-  const { 
-    tenders = [], quotations = [], projects = [], feedback = [], documents = [], 
-    openModal, addToast 
-  } = useNexusStore();
-  
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'tenders' | 'quotes' | 'projects' | 'feedback' | 'docs'>('dashboard');
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const { tenders, quotations, feedback } = useNexusStore();
 
-  const openTenders = tenders.filter(t => t.status === 'submitted' || t.status === 'drafting');
-  const totalTenderValue = openTenders.reduce((sum, t) => sum + t.value, 0);
-  const readyForProduction = projects.filter(p => p.currentPhase === 1).length;
-  const completedProjects = projects.filter(p => p.progress === 100).length;
+  const pipelineValue = tenders.reduce((s, t) => s + t.value, 0);
+  const wonValue = tenders.filter(t => t.status === 'won').reduce((s, t) => s + t.value, 0);
+  const winRate = tenders.length ? Math.round((tenders.filter(t => t.status === 'won').length / tenders.length) * 100) : 0;
 
-  const renderDashboard = () => (
-    <div className="animate-in">
-      {/* SECTOR INTEL HEADER */}
-      <div className="card gap-b" style={{ 
-        background: 'linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-base) 100%)',
-        borderLeft: '4px solid var(--primary)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <div className="stat-icon" style={{ backgroundColor: 'var(--primary-dim)', color: 'var(--primary)', marginBottom: 0 }}>
-            <Target size={20} />
-          </div>
-          <div>
-            <h3 style={{ margin: 0 }}>Market Pipeline Intelligence</h3>
-            <p className="card-sub">Sector: North Emirates | Forecast: Optimized</p>
-          </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <Badge variant="info">Q3 STRATEGY ACTIVE</Badge>
-          </div>
-        </div>
-        
-        <div className="grid-3">
-          <div>
-            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '4px' }}>Submission Window</div>
-            <p style={{ fontSize: '13px', margin: 0 }}><strong>3 high-value tenders</strong> closing within 72 hours. Review of technical specs required.</p>
-          </div>
-          <div style={{ borderLeft: '1px solid var(--border-subtle)', paddingLeft: '24px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--success)', textTransform: 'uppercase', marginBottom: '4px' }}>Conversion Velocity</div>
-            <p style={{ fontSize: '13px', margin: 0 }}>Quotation-to-PO conversion up <strong>14%</strong>. Vendor pricing is within optimized bounds.</p>
-          </div>
-          <div style={{ borderLeft: '1px solid var(--border-subtle)', paddingLeft: '24px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--warning)', textTransform: 'uppercase', marginBottom: '4px' }}>Customer Sentiment</div>
-            <p style={{ fontSize: '13px', margin: 0 }}>Intelligence briefing indicates <strong>Positive</strong> outlook for upcoming infrastructure bids.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="stats-grid">
-        <StatCard label="Open Tenders" value={openTenders.length} subValue={`AED ${(totalTenderValue / 1000000).toFixed(1)}M`} icon={<FileText size={18} />} accentColor="#3b82f6" />
-        <StatCard label="Active Quotes" value={quotations.length} trend={{ value: '+2 New', type: 'up' }} icon={<FileCode size={18} />} accentColor="#8b5cf6" />
-        <StatCard label="Production Ready" value={readyForProduction} trend={{ value: 'Critical', type: 'down' }} icon={<FileUp size={18} />} accentColor="#ef4444" />
-        <StatCard label="Live Execution" value={projects.length - completedProjects} icon={<Briefcase size={18} />} accentColor="#f59e0b" />
-      </div>
-
-      <div className="grid-2">
-        {/* DEADLINE COUNTDOWN */}
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h4 className="card-title">Critical Deadlines</h4>
-              <p className="card-sub">High-priority tender submissions</p>
+  return (
+    <DraggableGrid layouts={LAYOUTS}>
+      {/* Stats Row */}
+      <div key="stats">
+        <div className="grid grid-cols-4 gap-5 h-full">
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-[var(--text-muted)] font-medium">Pipeline Value</p>
+              <div className="w-10 h-10 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent-dark)]"><DollarSign className="w-5 h-5" /></div>
             </div>
-            <Zap size={18} color="var(--error)" />
+            <h3 className="text-2xl font-display font-semibold mt-2">{formatCurrency(pipelineValue)}</h3>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {tenders.filter(t => t.status === 'drafting').slice(0, 4).map((t, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: 'var(--bg-surface)', borderRadius: '12px', borderLeft: '4px solid var(--error)' }}>
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-[var(--text-muted)] font-medium">Active Tenders</p>
+              <div className="w-10 h-10 rounded-2xl bg-[var(--blue-dim)] flex items-center justify-center text-[var(--blue)]"><Briefcase className="w-5 h-5" /></div>
+            </div>
+            <h3 className="text-2xl font-display font-semibold mt-2">{tenders.filter(t => t.status !== 'won' && t.status !== 'lost').length}</h3>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-[var(--text-muted)] font-medium">Win Rate</p>
+              <div className="w-10 h-10 rounded-2xl bg-[var(--green-dim)] flex items-center justify-center text-[var(--green)]"><Target className="w-5 h-5" /></div>
+            </div>
+            <h3 className="text-2xl font-display font-semibold mt-2">{winRate}%</h3>
+          </div>
+          <div className="bg-[var(--accent)] rounded-[2rem] p-6 flex flex-col justify-between drag-handle cursor-move shadow-[0_10px_30px_-10px_rgba(212,255,0,0.4)]">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-black/60 font-semibold">Won Value</p>
+              <ArrowUpRight className="w-5 h-5 text-black/40" />
+            </div>
+            <h3 className="text-2xl font-display font-bold text-black mt-2">{formatCurrency(wonValue)}</h3>
+          </div>
+        </div>
+      </div>
+
+      {/* Tender Pipeline */}
+      <div key="pipeline">
+        <Card className="h-full drag-handle cursor-move">
+          <h2 className="text-sm font-semibold mb-4">Tender Pipeline</h2>
+          <div className="flex-1 overflow-auto">
+            <Table
+              data={tenders}
+              columns={[
+                { header: 'Reference', accessor: 'ref', render: (item) => <span className="font-semibold text-[var(--text)]">{item.ref}</span> },
+                { header: 'Client', accessor: 'client' },
+                { header: 'Value', render: (item) => formatCurrency(item.value) },
+                { header: 'Status', render: (item) => (
+                  <Badge variant={item.status === 'won' ? 'success' : item.status === 'lost' ? 'danger' : item.status === 'submitted' ? 'info' : 'warning'}>
+                    {item.status.toUpperCase()}
+                  </Badge>
+                )},
+                { header: 'Probability', render: (item) => (
+                  <div className="w-24">
+                    <ProgressBar progress={item.probability} color={item.probability > 60 ? 'var(--green)' : 'var(--accent)'} size="sm" />
+                  </div>
+                )},
+              ]}
+            />
+          </div>
+        </Card>
+      </div>
+
+      {/* Quotations */}
+      <div key="quotes">
+        <Card className="h-full drag-handle cursor-move">
+          <h2 className="text-sm font-semibold mb-4">Recent Quotations</h2>
+          <div className="space-y-4 flex-1">
+            {(quotations || []).map(q => (
+              <div key={q.id} className="bg-[var(--bg3)] p-4 rounded-2xl border border-[var(--border)] flex items-center justify-between">
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '14px' }}>{t.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{t.client}</div>
+                  <div className="text-sm font-semibold text-[var(--text)]">{q.title}</div>
+                  <div className="text-xs text-[var(--text-muted)] mt-1">{q.client} · v{q.version}</div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700, color: 'var(--error)' }}>{t.deadline}</div>
-                  <Badge variant="ghost" style={{ fontSize: '10px' }}>FINAL REVIEW</Badge>
+                <Badge variant={q.status === 'accepted' ? 'success' : q.status === 'sent' ? 'info' : 'warning'}>
+                  {q.status.toUpperCase()}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Client Feedback */}
+      <div key="feedback">
+        <Card className="h-full drag-handle cursor-move">
+          <h2 className="text-sm font-semibold mb-4">Client Feedback</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+            {(feedback || []).map(f => (
+              <div key={f.id} className="bg-[var(--bg3)] p-5 rounded-2xl border border-[var(--border)]">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold">{f.client}</span>
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className={`w-2 h-2 rounded-full ${i < f.rating ? 'bg-[var(--accent)]' : 'bg-[#eee]'}`} />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--text2)] leading-relaxed">{f.comment}</p>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">{f.date}</span>
+                  <Badge variant={f.status === 'resolved' ? 'success' : 'warning'}>{f.status}</Badge>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* PIPELINE VISUAL */}
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h4 className="card-title">Conversion Pipeline</h4>
-              <p className="card-sub">Sales lifecycle velocity</p>
-            </div>
-            <Layers size={18} color="var(--primary)" />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '10px 0' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
-                <span>Phase 01: Submitted</span>
-                <span style={{ color: 'var(--primary)' }}>{tenders.filter(t => t.status === 'submitted').length} UNITS</span>
-              </div>
-              <ProgressBar progress={100} color="var(--primary)" />
-            </div>
-            <div style={{ paddingLeft: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
-                <span>Phase 02: Active Quotes</span>
-                <span style={{ color: 'var(--secondary)' }}>{quotations.length} UNITS</span>
-              </div>
-              <ProgressBar progress={75} color="var(--primary-container)" />
-            </div>
-            <div style={{ paddingLeft: '40px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>
-                <span>Phase 03: Secured</span>
-                <span style={{ color: 'var(--success)' }}>{tenders.filter(t => t.status === 'won').length} UNITS</span>
-              </div>
-              <ProgressBar progress={40} color="var(--success)" />
-            </div>
-          </div>
-        </div>
+        </Card>
       </div>
-    </div>
-  );
-
-  if (selectedProjectId) {
-    const project = projects.find(p => p.id === selectedProjectId);
-    return (
-      <MarketingProjectDetail 
-        project={project} 
-        onBack={() => setSelectedProjectId(null)}
-        onSaveFeedback={(comment, rating) => {
-          addToast(`Intelligence Saved: Rating ${rating}/5`, 'success');
-          setSelectedProjectId(null);
-        }}
-      />
-    );
-  }
-
-  return (
-    <div className="animate-in">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <Badge variant="primary" style={{ marginBottom: '8px' }}>Business Intelligence</Badge>
-          <h1 style={{ margin: 0 }}>Market Portal</h1>
-          <p className="card-sub">Managing regional tenders, client quotations, and lifecycle conversion</p>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="theme-toggle" style={{ width: 'auto', padding: '0 16px', gap: '8px' }} onClick={() => openModal('feedback_invite')}>
-            <Users size={16} /> Customer Health
-          </button>
-          <button className="btn-primary" onClick={() => openModal('tender_create')}>
-            <Plus size={18} style={{ marginRight: '8px' }} /> New Tender
-          </button>
-        </div>
-      </div>
-
-      <div className="tabs-integrated">
-        <button className={`tab-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-          <Target size={16} /> DASHBOARD
-        </button>
-        <button className={`tab-item ${activeTab === 'tenders' ? 'active' : ''}`} onClick={() => setActiveTab('tenders')}>
-          <FileText size={16} /> TENDERS
-        </button>
-        <button className={`tab-item ${activeTab === 'quotes' ? 'active' : ''}`} onClick={() => setActiveTab('quotes')}>
-          <FileCode size={16} /> QUOTATIONS
-        </button>
-        <button className={`tab-item ${activeTab === 'projects' ? 'active' : ''}`} onClick={() => setActiveTab('projects')}>
-          <Briefcase size={16} /> PROJECTS
-        </button>
-        <button className={`tab-item ${activeTab === 'feedback' ? 'active' : ''}`} onClick={() => setActiveTab('feedback')}>
-          <MessageSquare size={16} /> FEEDBACK
-        </button>
-        <button className={`tab-item ${activeTab === 'docs' ? 'active' : ''}`} onClick={() => setActiveTab('docs')}>
-          <Shield size={16} /> VAULT
-        </button>
-      </div>
-
-      {activeTab === 'dashboard' && renderDashboard()}
-      
-      {activeTab === 'tenders' && (
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h4 className="card-title">Tender Registry</h4>
-              <p className="card-sub">Active regional and international bids</p>
-            </div>
-            <div className="topbar-search" style={{ width: '240px', backgroundColor: 'var(--bg-base)' }}>
-              <Search size={14} color="var(--text-tertiary)" />
-              <input type="text" placeholder="Search tenders..." />
-            </div>
-          </div>
-          <Table data={tenders} columns={[
-            { header: 'Ref', render: (t: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700 }}>{t.ref}</span> },
-            { header: 'Client / Title', render: (t: any) => (
-              <div>
-                <div style={{ fontWeight: 700 }}>{t.title}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{t.client}</div>
-              </div>
-            ), width: '40%' },
-            { header: 'Value', render: (t: any) => `AED ${t.value.toLocaleString()}` },
-            { header: 'Deadline', render: (t: any) => t.deadline },
-            { header: 'Status', render: (t: any) => (
-              <Badge variant={t.status === 'won' ? 'success' : t.status === 'lost' ? 'danger' : t.status === 'submitted' ? 'info' : 'warning'}>
-                {t.status.toUpperCase()}
-              </Badge>
-            )},
-            { header: 'Win Probability', render: (t: any) => (
-              <div style={{ width: '80px' }}>
-                <ProgressBar progress={t.probability} color="var(--primary)" />
-              </div>
-            )}
-          ]} />
-        </div>
-      )}
-
-      {/* Other tabs follow the same Slab table pattern */}
-      {(activeTab === 'quotes' || activeTab === 'projects' || activeTab === 'feedback' || activeTab === 'docs') && (
-        <div className="card">
-          <div className="card-header">
-            <h4 className="card-title">{activeTab.toUpperCase()} OVERVIEW</h4>
-            <Badge variant="ghost">MANAGED DATA</Badge>
-          </div>
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            This section is being synchronized with the new "Industrial Curator" Slab view.
-          </div>
-        </div>
-      )}
-    </div>
+    </DraggableGrid>
   );
 };
 

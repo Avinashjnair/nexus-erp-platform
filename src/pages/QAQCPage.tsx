@@ -1,106 +1,127 @@
-import React, { useState } from 'react';
-import { useNexusStore } from '../store/useNexusStore';
-import StatCard from '../components/ui/StatCard';
-import Table from '../components/ui/Table';
+import React from 'react';
+import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
-import { ClipboardCheck, ShieldAlert, FileText, CheckCircle2, Plus, Search, MoreHorizontal } from 'lucide-react';
-import { formatStatus } from '../utils/formatters';
+
+import DraggableGrid from '../components/ui/DraggableGrid';
+import Table from '../components/ui/Table';
+import { useNexusStore } from '../store/useNexusStore';
+import { ClipboardCheck, FileCheck, AlertOctagon, ArrowUpRight } from 'lucide-react';
+
+const LAYOUTS = {
+  lg: [
+    { i: 'stats', x: 0, y: 0, w: 12, h: 2, minW: 8, minH: 2 },
+    { i: 'inspections', x: 0, y: 2, w: 7, h: 5, minW: 5, minH: 4 },
+    { i: 'ncrs', x: 7, y: 2, w: 5, h: 5, minW: 4, minH: 4 },
+    { i: 'reports', x: 0, y: 7, w: 12, h: 4, minW: 8, minH: 3 },
+  ],
+};
 
 const QAQCPage: React.FC = () => {
   const { inspectionRequests, ncrs, reports, openModal } = useNexusStore();
-  const [search, setSearch] = useState('');
 
-  const stats = {
-    totalIR: inspectionRequests.length,
-    pendingIR: inspectionRequests.filter(i => i.status === 'pending' || i.status === 'scheduled').length,
-    openNCR: ncrs.filter(n => n.status === 'open').length,
-    reportsTotal: reports.length
-  };
-
-  const filteredIR = inspectionRequests.filter(ir => 
-    ir.activity.toLowerCase().includes(search.toLowerCase()) || ir.id.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const irColumns = [
-    { header: 'Ref ID', render: (ir: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700, fontSize: '13px' }}>{ir.id}</span> },
-    { header: 'Inspection Item', accessor: 'activity', width: '30%' },
-    { header: 'Type', accessor: 'type' },
-    { header: 'Status', render: (ir: any) => (
-      <Badge variant={
-        ir.status === 'approved' ? 'success' : 
-        ir.status === 'rejected' ? 'danger' : 
-        ir.status === 'scheduled' ? 'info' : 'warning'
-      }>
-        {formatStatus(ir.status).toUpperCase()}
-      </Badge>
-    )},
-    { header: 'Actions', render: (ir: any) => (
-      <button className="theme-toggle" style={{ width: '32px', height: '32px' }} onClick={() => openModal('ir_details', ir)}>
-        <MoreHorizontal size={14} />
-      </button>
-    )}
-  ];
+  const scheduled = inspectionRequests.filter(i => i.status === 'scheduled').length;
+  const pending = inspectionRequests.filter(i => i.status === 'pending').length;
+  const openNCRs = ncrs.filter(n => n.status === 'open').length;
 
   return (
-    <div className="animate-in">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <Badge variant="danger" style={{ marginBottom: '8px' }}>Quality & Compliance</Badge>
-          <h1 style={{ margin: 0 }}>Inspection Control</h1>
-          <p className="card-sub">Tracking non-conformances and scheduled site inspections</p>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn-primary" style={{ background: 'var(--error)' }} onClick={() => openModal('ncr_create')}>
-            <ShieldAlert size={18} style={{ marginRight: '8px' }} /> Raise NCR
-          </button>
-          <button className="btn-primary" onClick={() => openModal('ir_create')}>
-            <Plus size={18} style={{ marginRight: '8px' }} /> Request Inspection
-          </button>
-        </div>
-      </div>
-
-      <div className="stats-grid">
-        <StatCard label="Total Inspections" value={stats.totalIR} icon={<ClipboardCheck size={18} />} accentColor="#3b82f6" />
-        <StatCard label="Scheduled / Pending" value={stats.pendingIR} trend={{ value: 'Active', type: 'up' }} icon={<FileText size={18} />} accentColor="#f59e0b" />
-        <StatCard label="Open NCRs" value={stats.openNCR} trend={{ value: 'Critical', type: 'down' }} icon={<ShieldAlert size={18} />} accentColor="#ef4444" />
-        <StatCard label="Closed Reports" value={stats.reportsTotal} icon={<CheckCircle2 size={18} />} accentColor="#10b981" />
-      </div>
-
-      <div className="grid-2">
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h4 className="card-title">Live Inspection Stream</h4>
-              <p className="card-sub">Review and process inspection requests</p>
-            </div>
-            <div className="topbar-search" style={{ width: '200px', backgroundColor: 'var(--bg-base)' }}>
-              <Search size={14} color="var(--text-tertiary)" />
-              <input type="text" placeholder="Search IR..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
+    <DraggableGrid layouts={LAYOUTS}>
+      {/* Stats */}
+      <div key="stats">
+        <div className="grid grid-cols-4 gap-5 h-full">
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Scheduled IRs</p>
+            <h3 className="text-3xl font-display font-semibold">{scheduled}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--blue)]"><ClipboardCheck className="w-3 h-3" /> Upcoming</div>
           </div>
-          <Table data={filteredIR} columns={irColumns} onRowClick={(ir) => openModal('ir_details', ir)} />
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h4 className="card-title">Open NCR Registry</h4>
-              <p className="card-sub">Critical non-conformance items requiring rectification</p>
-            </div>
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Pending Review</p>
+            <h3 className="text-3xl font-display font-semibold">{pending}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--amber)]"><FileCheck className="w-3 h-3" /> Awaiting</div>
           </div>
-          <Table 
-            data={ncrs.filter(n => n.status === 'open')}
-            columns={[
-              { header: 'NCR ID', render: (n: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700, color: 'var(--error)' }}>{n.id}</span> },
-              { header: 'Description', accessor: 'activity' },
-              { header: 'Severity', render: (n: any) => (
-                <Badge variant={n.severity === 'major' ? 'danger' : 'warning'}>{n.severity.toUpperCase()}</Badge>
-              )}
-            ]}
-          />
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Open NCRs</p>
+            <h3 className="text-3xl font-display font-semibold text-[var(--red)]">{openNCRs}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--red)]"><AlertOctagon className="w-3 h-3" /> Action needed</div>
+          </div>
+          <div className="bg-[var(--accent)] rounded-[2rem] p-6 flex flex-col justify-between drag-handle cursor-move shadow-[0_10px_30px_-10px_rgba(212,255,0,0.4)]">
+            <p className="text-xs text-black/60 font-semibold">Total Reports</p>
+            <h3 className="text-3xl font-display font-bold text-black">{reports.length}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-black/60"><ArrowUpRight className="w-3 h-3" /> Generated</div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Inspection Requests */}
+      <div key="inspections">
+        <Card className="h-full drag-handle cursor-move">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold">Inspection Requests</h2>
+            <button onClick={() => openModal('IR_MODAL')} className="btn-accent text-xs py-2 px-4 rounded-xl">+ New IR</button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <Table
+              data={inspectionRequests}
+              columns={[
+                { header: 'ID', accessor: 'id', render: (item) => <span className="font-semibold text-[var(--text)]">{item.id}</span> },
+                { header: 'Activity', accessor: 'activity' },
+                { header: 'Type', accessor: 'type' },
+                { header: 'Date', accessor: 'date' },
+                { header: 'Status', render: (item) => (
+                  <Badge variant={item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'danger' : item.status === 'scheduled' ? 'info' : 'warning'}>
+                    {item.status.toUpperCase()}
+                  </Badge>
+                )},
+              ]}
+            />
+          </div>
+        </Card>
+      </div>
+
+      {/* NCRs */}
+      <div key="ncrs">
+        <Card className="h-full drag-handle cursor-move">
+          <h2 className="text-sm font-semibold mb-4">Non-Conformance Reports</h2>
+          <div className="space-y-4 flex-1 overflow-auto">
+            {ncrs.map(n => (
+              <div key={n.id} className={`p-5 rounded-2xl border ${n.status === 'open' ? 'bg-[var(--red-dim)] border-[var(--red)]/20' : 'bg-[var(--bg3)] border-[var(--border)]'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-[var(--text)]">{n.id}</span>
+                  <Badge variant={n.status === 'open' ? 'danger' : 'success'}>{n.status.toUpperCase()}</Badge>
+                </div>
+                <p className="text-xs text-[var(--text2)] mb-2">{n.activity}</p>
+                <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-medium">
+                  <span>{n.severity.toUpperCase()}</span>
+                  <span>·</span>
+                  <span>{n.raised}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Reports */}
+      <div key="reports">
+        <Card className="h-full drag-handle cursor-move">
+          <h2 className="text-sm font-semibold mb-4">Inspection Reports</h2>
+          <div className="flex-1 overflow-auto">
+            <Table
+              data={reports}
+              columns={[
+                { header: 'ID', accessor: 'id', render: (item) => <span className="font-semibold text-[var(--text)]">{item.id}</span> },
+                { header: 'Title', accessor: 'title' },
+                { header: 'Type', accessor: 'type' },
+                { header: 'Date', accessor: 'date' },
+                { header: 'Result', render: (item) => (
+                  <Badge variant={item.result === 'Pass' ? 'success' : 'danger'}>{item.result}</Badge>
+                )},
+                { header: 'File', accessor: 'file' },
+              ]}
+            />
+          </div>
+        </Card>
+      </div>
+    </DraggableGrid>
   );
 };
 

@@ -20,7 +20,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addToast('Success', `Transaction "${formData.name}" added successfully.`, 'success');
+    addToast(`Transaction "${formData.name}" added successfully.`, 'success');
     onClose();
   };
 

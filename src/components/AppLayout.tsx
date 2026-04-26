@@ -12,11 +12,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { currentRole } = useNexusStore();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-[var(--bg0)]">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 p-12 overflow-y-auto">
-          <div className="max-w-7xl mx-auto">
+        <div className="flex-1 px-8 pt-6 pb-20 overflow-y-auto">
+          <div className="max-w-[1400px] mx-auto">
             <Topbar />
             <main>
               <AnimatePresence mode="wait">

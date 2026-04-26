@@ -1,200 +1,191 @@
 import React from 'react';
-import StatCard from '../components/ui/StatCard';
-import ProgressBar from '../components/ui/ProgressBar';
-import Badge from '../components/ui/Badge';
-import Table from '../components/ui/Table';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { ArrowUpRight, ArrowDownRight, Briefcase, FileText, CheckCircle2, Clock, Building2, DollarSign } from 'lucide-react';
 import { useNexusStore } from '../store/useNexusStore';
-import { ShoppingCart, ClipboardCheck, Folder, DollarSign, Clock, AlertTriangle, Plus, Sparkles } from 'lucide-react';
-import { formatCurrency, getStatusLabel } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
+import Card from '../components/ui/Card';
 
 const ManagementPage: React.FC = () => {
-  const { projects, purchaseRequests, ncrs, activityLog, openModal } = useNexusStore();
+  const { projects, purchaseRequests, tenders } = useNexusStore();
 
   const totalValue = projects.reduce((s, p) => s + p.contractValue, 0);
   const pendingPRs = purchaseRequests.filter(p => p.status === 'pending').length;
-  const openNCRs = ncrs.filter(n => n.status === 'open').length;
+  const activeTenders = tenders.filter(t => t.status === 'drafting' || t.status === 'submitted').length;
+  const yetToIssue = purchaseRequests.filter(p => p.status === 'approved').length;
+
+  const BACKLOG_DATA = [
+    { name: 'Purchase', value: pendingPRs > 0 ? 45 : 20 },
+    { name: 'Production', value: 70 },
+    { name: 'Store', value: 30 },
+    { name: 'QAQC', value: 85 },
+    { name: 'Marketing', value: 50 },
+    { name: 'Finance', value: 60 },
+  ];
+
+  // Calculate project health stats
+  const onTrack = projects.filter(p => p.status === 'on-track').length;
+  const delayed = projects.filter(p => p.status === 'delayed').length;
+  const nearComplete = projects.filter(p => p.status === 'near-complete').length;
+  const total = projects.length || 1;
 
   return (
-    <div className="space-y-20 animate-in">
-      {/* AI INTELLIGENCE HEADER */}
-      <div className="bg-gradient-to-br from-surface/50 to-card border border-border-subtle rounded-3xl p-12 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-        <div className="flex items-center gap-6 mb-12">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
-            <Sparkles size={28} />
-          </div>
-          <div>
-            <h3 className="text-2xl font-black text-text-primary tracking-tighter">Executive Intelligence</h3>
-            <p className="text-sm text-text-tertiary font-medium">Predictive operational insights & risk analysis</p>
-          </div>
-          <div className="ml-auto">
-            <Badge variant="success" className="px-4 py-1.5 rounded-full text-[11px]">84% Operational Efficiency</Badge>
-          </div>
-        </div>
+    <div className="font-sans text-[var(--text)] select-none p-6 md:p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
-          <div className="space-y-2">
-            <div className="text-[10px] font-black text-error uppercase tracking-[0.2em]">Supply Chain Risk</div>
-            <p className="text-[15px] text-text-secondary leading-relaxed">Critical material shortage for <strong className="text-text-primary font-bold">Project P1</strong>. Immediate approval of PR-0815 recommended to avoid 4-day slippage.</p>
-          </div>
-          <div className="md:border-l border-border-subtle md:pl-16 space-y-2">
-            <div className="text-[10px] font-black text-warning uppercase tracking-[0.2em]">Project Slippage</div>
-            <p className="text-[15px] text-text-secondary leading-relaxed"><strong className="text-text-primary font-bold">Project P2</strong> indicates a 12% lag in MEP phase. Strategic rescheduling can recover 3 days.</p>
-          </div>
-          <div className="md:border-l border-border-subtle md:pl-16 space-y-2">
-            <div className="text-[10px] font-black text-success uppercase tracking-[0.2em]">Cashflow Health</div>
-            <p className="text-[15px] text-text-secondary leading-relaxed">Budget utilization is at 92%. Current vendor performance yields a <strong className="text-text-primary font-bold">3.2% cost saving</strong> vs projection.</p>
-          </div>
-        </div>
-      </div>
+        {/* ── KPI CARD ── */}
+        <div className="lg:col-span-5 h-full">
+          <Card className="h-full">
+            <h2 className="text-lg font-semibold text-gray-800 mb-6">Main Goals</h2>
+            
+            <div className="grid grid-cols-2 gap-4 flex-1">
+              <div className="flex flex-col justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Running Projects</p>
+                  <h3 className="text-4xl font-bold tracking-tight mb-2">{projects.length}</h3>
+                  <div className="flex items-center gap-1 text-[var(--accent-dark)] text-xs font-semibold">
+                    <div className="bg-[var(--accent)] p-1 rounded-full text-black"><ArrowUpRight className="w-3 h-3" /></div>
+                    <span>Active</span>
+                  </div>
+                </div>
+                <div className="h-6 w-full bg-[#f4f4f4] rounded-full overflow-hidden mt-4">
+                  <div className="h-full bg-[var(--accent)]" style={{ width: `${Math.round((onTrack / total) * 100)}%` }} />
+                </div>
+              </div>
 
-      {/* CORE VITALS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-        <StatCard 
-          label="Active Projects" 
-          value={projects.length} 
-          trend={{ value: '1 New', type: 'up' }}
-          icon={<Folder size={18} />}
-          accentColor="#3b82f6"
-        />
-        <StatCard 
-          label="Contract Value" 
-          value={formatCurrency(totalValue)} 
-          subValue="Across 4 active sites"
-          icon={<DollarSign size={18} />}
-          accentColor="#10b981"
-        />
-        <StatCard 
-          label="Pending Approvals" 
-          value={pendingPRs + 1} 
-          trend={{ value: '2 Urgent', type: 'down' }}
-          icon={<Clock size={18} />}
-          accentColor="#f59e0b"
-        />
-        <StatCard 
-          label="Open NCRs" 
-          value={openNCRs} 
-          subValue={openNCRs > 0 ? 'Action required' : 'All clear'}
-          icon={<AlertTriangle size={18} />}
-          accentColor="#ef4444"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
-        {/* PROGRESS TRACKER */}
-        <div className="lg:col-span-3 bg-card rounded-3xl p-10 border border-border-subtle shadow-sm flex flex-col h-full">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h4 className="text-xl font-black text-text-primary tracking-tight">Project Execution</h4>
-              <p className="text-xs text-text-tertiary font-medium">Real-time fabrication & delivery milestones</p>
+              <div className="flex flex-col justify-between border-l border-[var(--border)] pl-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Tenders in Bidding</p>
+                  <h3 className="text-4xl font-bold tracking-tight mb-2">{activeTenders}</h3>
+                  <div className="flex items-center gap-1 text-gray-500 text-xs font-semibold">
+                    <div className="bg-[#f0f0f0] p-1 rounded-full"><ArrowDownRight className="w-3 h-3" /></div>
+                    <span>Bidding</span>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                  <p className="text-sm font-medium text-gray-500 mb-1">Yet to issue</p>
+                  <h3 className="text-2xl font-bold tracking-tight">{yetToIssue}</h3>
+                </div>
+              </div>
             </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => openModal('NEW_TRANSACTION_MODAL')}
-                className="px-5 py-2.5 rounded-xl border border-border text-xs font-bold text-text-secondary hover:bg-surface transition-all flex items-center gap-2"
-              >
-                <DollarSign size={14} /> Transaction
-              </button>
-              <button 
-                onClick={() => openModal('PR_MODAL')}
-                className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold shadow-lg shadow-primary/20 hover:shadow-xl transition-all flex items-center gap-2"
-              >
-                <Plus size={14} /> Project
-              </button>
+          </Card>
+        </div>
+
+        {/* ── STATUS CARD (LIME) ── */}
+        <div className="lg:col-span-3 h-full">
+          <Card className="h-full bg-[var(--accent)] text-black border-none shadow-[0_20px_40px_-15px_rgba(212,255,0,0.4)]">
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-lg font-semibold text-gray-800">Project Status</h2>
+              <div className="p-2 bg-white/30 rounded-full backdrop-blur-md">
+                <ArrowUpRight className="w-4 h-4" />
+              </div>
             </div>
-          </div>
-          <div className="space-y-12 flex-1">
-            {projects.map(p => (
-              <div key={p.id} className="group">
-                <div className="flex justify-between mb-4">
-                  <div>
-                    <div className="font-bold text-[15px] text-text-primary group-hover:text-primary transition-colors tracking-tight">{p.title}</div>
-                    <div className="text-[11px] text-text-tertiary font-semibold uppercase tracking-wider mt-0.5">{p.client} · Due {p.endDate}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-black text-primary text-base mb-1 tracking-tighter">{p.progress}%</div>
-                    <Badge variant={p.status === 'on-track' ? 'success' : 'warning'} className="text-[10px] px-2 py-0.5">{getStatusLabel(p.status)}</Badge>
-                  </div>
+            
+            <h3 className="text-xl font-bold tracking-tight leading-tight pr-4 truncate">Health Overview</h3>
+            
+            <div className="flex-1 mt-6 space-y-3">
+              <div className="bg-white/20 px-3 py-2 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-sm font-medium text-gray-800">On Time</span>
                 </div>
-                <ProgressBar progress={p.progress} color="var(--primary)" />
+                <span className="font-bold">{Math.round((onTrack / total) * 100)}%</span>
               </div>
-            ))}
-          </div>
+              <div className="bg-white/20 px-3 py-2 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2 text-gray-800/80">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm font-medium text-gray-800/80">Delayed</span>
+                </div>
+                <span className="font-bold">{Math.round((delayed / total) * 100)}%</span>
+              </div>
+              <div className="bg-white/20 px-3 py-2 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2 text-gray-800/80">
+                  <Building2 className="w-4 h-4" />
+                  <span className="text-sm font-medium text-gray-800/80">Completed</span>
+                </div>
+                <span className="font-bold">{Math.round((nearComplete / total) * 100)}%</span>
+              </div>
+            </div>
+          </Card>
         </div>
 
-        {/* RECENT ACTIVITY */}
-        <div className="lg:col-span-2 bg-card rounded-3xl p-10 border border-border-subtle shadow-sm flex flex-col h-full">
-          <div className="mb-12">
-            <h4 className="text-xl font-black text-text-primary tracking-tight">Event Stream</h4>
-            <p className="text-xs text-text-tertiary font-medium">Cross-departmental live feed</p>
-          </div>
-          <div className="space-y-10 flex-1">
-            {activityLog.slice(0, 5).map((a, i) => (
-              <div key={i} className="flex gap-6 group">
-                <div className="flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full mt-1.5 transition-transform group-hover:scale-125 ring-4 ring-offset-2 ${
-                    a.type === 'success' ? 'bg-success ring-success/10' : a.type === 'warning' ? 'bg-warning ring-warning/10' : 'bg-primary ring-primary/10'
-                  }`} />
-                  {i < 4 && <div className="w-px flex-1 bg-border-subtle my-4" />}
-                </div>
-                <div className="pb-2">
-                  <div className="text-sm font-bold text-text-primary mb-1 tracking-tight">{a.title}</div>
-                  <div className="text-[13px] text-text-secondary leading-relaxed mb-2">{a.text}</div>
-                  <div className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest bg-surface/50 px-2 py-1 rounded inline-block">
-                    {a.time} · {a.dept}
-                  </div>
-                </div>
+        {/* ── BACKLOG CHART ── */}
+        <div className="lg:col-span-4 h-full">
+          <Card className="h-full">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800">Dept Backlog</h2>
+                <p className="text-sm font-medium text-gray-500 mt-1">Pending tasks by execution unit</p>
               </div>
-            ))}
-          </div>
+            </div>
+            <div className="flex-1 -mx-2 mt-4 h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={BACKLOG_DATA} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #eee', borderRadius: '12px', boxShadow: '0 10px 20px -10px rgba(0,0,0,0.1)' }}
+                    itemStyle={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}
+                    cursor={{fill: 'rgba(0,0,0,0.02)'}}
+                  />
+                  <Bar dataKey="value" radius={[20, 20, 20, 20]} barSize={24}>
+                    {BACKLOG_DATA.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 3 || index === 1 ? '#111827' : '#ececec'} />
+                    ))}
+                  </Bar>
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{fontSize: 11, fill: '#6B7280', fontWeight: 500, textAnchor: 'middle'}} 
+                    dy={12}
+                    interval={0}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
         </div>
-      </div>
 
-      {/* WORKLOAD ANALYSIS */}
-      <div className="bg-card rounded-3xl p-10 border border-border-subtle shadow-sm">
-        <div className="mb-12 flex justify-between items-end">
-          <div>
-            <h4 className="text-xl font-black text-text-primary tracking-tight">Divisional Backlog</h4>
-            <p className="text-xs text-text-tertiary font-medium">Resource allocation & capacity load</p>
-          </div>
-          <div className="flex gap-4 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-success" /> Optimal</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-warning" /> Warning</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-error" /> Critical</div>
-          </div>
-        </div>
-        <Table 
-          data={[
-            { dept: 'Marketing & Tendering', tasks: '6 active bids', critical: '0 pending', load: 60, status: 'on-track' },
-            { dept: 'Procurement', tasks: '14 purchase orders', critical: '3 urgent PRs', load: 85, status: 'high-load' },
-            { dept: 'Quality Control', tasks: '9 pending IRs', critical: '1 open NCR', load: 75, status: 'on-track' },
-            { dept: 'Production Bay', tasks: '22 spools in fab', critical: '4 delayed items', load: 92, status: 'critical' },
-          ]}
-          columns={[
-            { header: 'Department', accessor: 'dept', width: '30%', render: (item) => (
-              <span className="font-bold text-text-primary tracking-tight">{item.dept}</span>
-            )},
-            { header: 'Active Tasks', accessor: 'tasks' },
-            { header: 'Priority Items', accessor: 'critical', render: (item) => (
-              <span className={`font-bold ${item.critical.includes('urgent') || item.critical.includes('delayed') ? 'text-error' : 'text-text-secondary'}`}>
-                {item.critical}
-              </span>
-            )},
-            { header: 'Utilization', render: (item) => (
-              <div className="w-40">
-                <div className="flex justify-between mb-1.5">
-                  <span className="text-[10px] font-bold text-text-tertiary">{item.load}%</span>
+        {/* ── PROJECT VALUE (FINANCIALS) ── */}
+        <div className="lg:col-span-12">
+          <Card className="h-full">
+            <h2 className="text-lg font-semibold text-gray-800 mb-6">Project Value (Financials)</h2>
+            
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-[var(--bg3)] p-6 rounded-3xl border border-[var(--border)] flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">On Order</p>
+                  <h4 className="text-4xl font-bold tracking-tight">{formatCurrency(totalValue * 0.36)}</h4>
+                  <p className="text-sm font-medium text-gray-500 mt-1">Total committed value</p>
                 </div>
-                <ProgressBar progress={item.load} color={item.load > 90 ? 'var(--error)' : item.load > 70 ? 'var(--warning)' : 'var(--success)'} />
+                <div className="w-14 h-14 bg-white rounded-full shadow-sm flex items-center justify-center text-black">
+                  <FileText className="w-5 h-5" />
+                </div>
               </div>
-            )},
-            { header: 'Health', render: (item) => (
-              <Badge variant={item.status === 'on-track' ? 'success' : item.status === 'critical' ? 'danger' : 'warning'} className="text-[9px] px-2 py-0.5">
-                {item.status.toUpperCase()}
-              </Badge>
-            )}
-          ]}
-        />
+
+              <div className="bg-[var(--bg3)] p-6 rounded-3xl border border-[var(--border)] flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Under Process</p>
+                  <h4 className="text-4xl font-bold tracking-tight">{formatCurrency(totalValue * 0.24)}</h4>
+                  <p className="text-sm font-medium text-gray-500 mt-1">Active execution phase</p>
+                </div>
+                <div className="w-14 h-14 bg-white rounded-full shadow-sm flex items-center justify-center text-black">
+                  <Briefcase className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="bg-[var(--accent)] p-6 rounded-3xl shadow-[0_10px_30px_-10px_rgba(212,255,0,0.4)] flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-800 uppercase tracking-wider mb-2">Billed</p>
+                  <h4 className="text-4xl font-bold tracking-tight text-black">{formatCurrency(totalValue)}</h4>
+                  <p className="text-sm font-medium text-gray-800 mt-1">Total realized revenue</p>
+                </div>
+                <div className="w-14 h-14 bg-black rounded-full flex items-center justify-center text-white">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
       </div>
     </div>
   );

@@ -1,16 +1,21 @@
 import React from 'react';
 import type { ReactNode } from 'react';
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface StatCardProps {
   label: string;
   value: string | number;
   subValue?: string;
-  icon: ReactNode;
+  icon?: ReactNode;
   accentColor?: string;
+  delta?: string | number;
+  deltaType?: 'up' | 'down' | 'neutral';
   trend?: {
     value: string;
     type: 'up' | 'down' | 'neutral';
   };
+  className?: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ 
@@ -18,37 +23,56 @@ const StatCard: React.FC<StatCardProps> = ({
   value, 
   subValue, 
   icon, 
-  accentColor = 'var(--primary)',
-  trend
+  accentColor,
+  delta,
+  deltaType,
+  trend,
+  className
 }) => {
+  const dType = deltaType || trend?.type || 'neutral';
+  const dVal = delta || trend?.value;
+
   return (
-    <div className="bg-card p-10 rounded-3xl border border-border-subtle shadow-sm flex flex-col gap-4 transition-all hover:shadow-lg hover:-translate-y-1 animate-in relative overflow-hidden group">
-      <div className="absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: accentColor }} />
-      <div 
-        className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 shadow-inner" 
-        style={{ 
-          backgroundColor: `${accentColor}10`, 
-          color: accentColor 
-        }}
-      >
-        {React.cloneElement(icon as React.ReactElement, { size: 24 })}
-      </div>
+    <div className={cn(
+      "bg-white rounded-[2rem] border border-[var(--border)] p-6 relative overflow-hidden transition-all duration-300 hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] group",
+      className
+    )}>
+      {icon && (
+        <div 
+          className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+          style={{ 
+            backgroundColor: accentColor ? `${accentColor}15` : 'var(--bg3)', 
+            color: accentColor || 'var(--text)' 
+          }}
+        >
+          {icon}
+        </div>
+      )}
+
       <div>
-        <div className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.2em] mb-1">{label}</div>
-        <div className="text-3xl font-black text-text-primary tracking-tighter">{value}</div>
+        <p className="text-xs text-[var(--text-muted)] font-medium mb-1">{label}</p>
+        <h3 className="text-3xl font-display font-semibold tracking-tight">{value}</h3>
       </div>
-      {(subValue || trend) && (
-        <div className="flex items-center gap-3 mt-1">
-          {trend && (
-            <div className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-              trend.type === 'up' ? 'bg-success/10 text-success' : 
-              trend.type === 'down' ? 'bg-error/10 text-error' : 
-              'bg-text-tertiary/10 text-text-tertiary'
-            }`}>
-              {trend.type === 'up' ? '↑' : trend.type === 'down' ? '↓' : '→'} {trend.value}
+
+      {(dVal || subValue) && (
+        <div className="flex items-center gap-2 mt-3">
+          {dVal && (
+            <div className={cn(
+              "flex items-center gap-1 text-xs font-semibold",
+              dType === 'up' ? 'text-[var(--green)]' : 
+              dType === 'down' ? 'text-[var(--red)]' : 
+              'text-[var(--text-muted)]'
+            )}>
+              <div className={cn(
+                "p-1 rounded-full",
+                dType === 'up' ? 'bg-[var(--accent)] text-black' : 'bg-[#f0f0f0]'
+              )}>
+                {dType === 'down' ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+              </div>
+              <span>{dVal}</span>
             </div>
           )}
-          {subValue && <span className="text-xs text-text-tertiary font-medium">{subValue}</span>}
+          {subValue && <span className="text-xs text-[var(--text-muted)]">{subValue}</span>}
         </div>
       )}
     </div>

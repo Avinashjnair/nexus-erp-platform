@@ -1,40 +1,25 @@
 import React from 'react';
+import { cn } from '../../lib/utils';
 
 interface BadgeProps {
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'accent' | 'lime';
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'ghost';
   className?: string;
-  style?: React.CSSProperties;
 }
 
-const Badge: React.FC<BadgeProps> = ({ 
-  children, 
-  variant = 'primary', 
-  className = '', 
-  style 
-}) => {
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'success': 
-        return 'bg-success/10 text-success border-success/20';
-      case 'warning': 
-        return 'bg-warning/10 text-warning border-warning/20';
-      case 'danger': 
-        return 'bg-error/10 text-error border-error/20';
-      case 'info': 
-        return 'bg-primary/10 text-primary border-primary/20';
-      case 'secondary': 
-        return 'bg-surface text-text-tertiary border-border-subtle';
-      default: 
-        return 'bg-primary/10 text-primary border-primary/20';
-    }
-  };
+const variantMap: Record<string, string> = {
+  default: 'badge-gray',
+  success: 'badge-green',
+  warning: 'badge-amber',
+  danger: 'badge-red',
+  info: 'badge-blue',
+  accent: 'badge-lime',
+  lime: 'badge-lime',
+};
 
+const Badge: React.FC<BadgeProps> = ({ variant = 'default', children, className }) => {
   return (
-    <span 
-      className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${getVariantStyles()} ${className}`} 
-      style={style}
-    >
+    <span className={cn('badge', variantMap[variant] || 'badge-gray', className)}>
       {children}
     </span>
   );

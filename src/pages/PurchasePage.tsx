@@ -1,118 +1,109 @@
-import React, { useState } from 'react';
-import { useNexusStore } from '../store/useNexusStore';
-import StatCard from '../components/ui/StatCard';
-import Table from '../components/ui/Table';
+import React from 'react';
+import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
-import { ShoppingCart, Clock, CheckCircle, AlertCircle, Plus, Search, Filter, MoreHorizontal } from 'lucide-react';
-import { formatStatus } from '../utils/formatters';
+import ProgressBar from '../components/ui/ProgressBar';
+import DraggableGrid from '../components/ui/DraggableGrid';
+import Table from '../components/ui/Table';
+import { useNexusStore } from '../store/useNexusStore';
+import { Truck, AlertTriangle, CheckCircle2, ArrowUpRight } from 'lucide-react';
+
+const LAYOUTS = {
+  lg: [
+    { i: 'stats', x: 0, y: 0, w: 12, h: 2, minW: 8, minH: 2 },
+    { i: 'prs', x: 0, y: 2, w: 7, h: 5, minW: 5, minH: 4 },
+    { i: 'vendors', x: 7, y: 2, w: 5, h: 5, minW: 4, minH: 4 },
+  ],
+};
 
 const PurchasePage: React.FC = () => {
-  const { purchaseRequests, approvePR, rejectPR, currentRole, openModal, addToast } = useNexusStore();
-  const [filter, setFilter] = useState('all');
-  const [search, setSearch] = useState('');
+  const { purchaseRequests, vendors, openModal } = useNexusStore();
 
-  const stats = {
-    total: purchaseRequests.length,
-    pending: purchaseRequests.filter(p => p.status === 'pending').length,
-    approved: purchaseRequests.filter(p => p.status === 'approved' || p.status === 'po-issued').length,
-    urgent: purchaseRequests.filter(p => p.priority === 'urgent' && p.status === 'pending').length
-  };
-
-  const filteredData = purchaseRequests.filter(pr => {
-    const matchesFilter = filter === 'all' || pr.status === filter;
-    const matchesSearch = pr.item.toLowerCase().includes(search.toLowerCase()) || pr.id.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
-
-  const columns = [
-    { header: 'PR ID', render: (pr: any) => <span style={{ fontFamily: 'IBM Plex Mono', fontWeight: 700, fontSize: '13px' }}>{pr.id}</span> },
-    { header: 'Requirement', accessor: 'item', width: '25%' },
-    { header: 'Quantity', render: (pr: any) => `${pr.qty} ${pr.unit}` },
-    { header: 'Priority', render: (pr: any) => (
-      <Badge variant={pr.priority === 'urgent' ? 'danger' : 'info'}>{pr.priority.toUpperCase()}</Badge>
-    )},
-    { header: 'Status', render: (pr: any) => (
-      <Badge variant={
-        pr.status === 'approved' || pr.status === 'po-issued' ? 'success' : 
-        pr.status === 'rejected' ? 'danger' : 
-        pr.status === 'pending' ? 'warning' : 'info'
-      }>
-        {formatStatus(pr.status).toUpperCase()}
-      </Badge>
-    )},
-    { header: 'Actions', render: (pr: any) => (
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {pr.status === 'pending' && (currentRole === 'management' || currentRole === 'purchase') && (
-          <>
-            <button 
-              className="theme-toggle" 
-              style={{ width: '32px', height: '32px', color: 'var(--success)' }}
-              onClick={(e) => { e.stopPropagation(); approvePR(pr.id); addToast(`PR ${pr.id} approved`, 'success'); }}
-            >
-              <CheckCircle size={14} />
-            </button>
-            <button 
-              className="theme-toggle" 
-              style={{ width: '32px', height: '32px', color: 'var(--error)' }}
-              onClick={(e) => { e.stopPropagation(); rejectPR(pr.id); addToast(`PR ${pr.id} rejected`, 'error'); }}
-            >
-              <AlertCircle size={14} />
-            </button>
-          </>
-        )}
-        <button className="theme-toggle" style={{ width: '32px', height: '32px' }} onClick={() => openModal('pr_details', pr)}>
-          <MoreHorizontal size={14} />
-        </button>
-      </div>
-    )}
-  ];
+  const pending = purchaseRequests.filter(p => p.status === 'pending').length;
+  const approved = purchaseRequests.filter(p => p.status === 'approved').length;
+  const delivered = purchaseRequests.filter(p => p.status === 'delivered').length;
+  const urgent = purchaseRequests.filter(p => p.priority === 'urgent').length;
 
   return (
-    <div className="animate-in">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <Badge variant="info" style={{ marginBottom: '8px' }}>Procurement & Supply Chain</Badge>
-          <h1 style={{ margin: 0 }}>Materials Control</h1>
-          <p className="card-sub">Manage purchase requisitions and vendor fulfillment</p>
-        </div>
-        <button className="btn-primary" onClick={() => openModal('pr_create')}>
-          <Plus size={18} style={{ marginRight: '8px' }} /> Create Requisition
-        </button>
-      </div>
-
-      <div className="stats-grid">
-        <StatCard label="Total Requests" value={stats.total} icon={<ShoppingCart size={18} />} accentColor="#3b82f6" />
-        <StatCard label="Pending Approval" value={stats.pending} trend={{ value: 'Needs Action', type: 'down' }} icon={<Clock size={18} />} accentColor="#f59e0b" />
-        <StatCard label="PO Issued" value={stats.approved} icon={<CheckCircle size={18} />} accentColor="#10b981" />
-        <StatCard label="Urgent Items" value={stats.urgent} trend={{ value: 'Critical', type: 'down' }} icon={<AlertCircle size={18} />} accentColor="#ef4444" />
-      </div>
-
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h4 className="card-title">Active Requisitions</h4>
-            <p className="card-sub">Listing {filteredData.length} entries</p>
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div className="topbar-search" style={{ width: '240px', backgroundColor: 'var(--bg-base)' }}>
-              <Search size={14} color="var(--text-tertiary)" />
-              <input type="text" placeholder="Search ID or Item..." value={search} onChange={(e) => setSearch(e.target.value)} />
+    <DraggableGrid layouts={LAYOUTS}>
+      {/* Stats */}
+      <div key="stats">
+        <div className="grid grid-cols-4 gap-5 h-full">
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Pending PRs</p>
+            <h3 className="text-3xl font-display font-semibold">{pending}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--amber)]">
+              <AlertTriangle className="w-3 h-3" /> {urgent} urgent
             </div>
-            <select 
-              style={{ padding: '0 12px', borderRadius: '8px', border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '13px' }}
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Approved</p>
+            <h3 className="text-3xl font-display font-semibold">{approved}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--green)]"><CheckCircle2 className="w-3 h-3" /> Ready for PO</div>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-[var(--border)] p-6 flex flex-col justify-between drag-handle cursor-move hover:shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] transition-shadow">
+            <p className="text-xs text-[var(--text-muted)] font-medium">Delivered</p>
+            <h3 className="text-3xl font-display font-semibold">{delivered}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-[var(--text-muted)]"><Truck className="w-3 h-3" /> This month</div>
+          </div>
+          <div className="bg-[var(--accent)] rounded-[2rem] p-6 flex flex-col justify-between drag-handle cursor-move shadow-[0_10px_30px_-10px_rgba(212,255,0,0.4)]">
+            <p className="text-xs text-black/60 font-semibold">Total PRs</p>
+            <h3 className="text-3xl font-display font-bold text-black">{purchaseRequests.length}</h3>
+            <div className="flex items-center gap-1 text-xs font-semibold text-black/60"><ArrowUpRight className="w-3 h-3" /> All time</div>
           </div>
         </div>
-        <Table data={filteredData} columns={columns} onRowClick={(pr) => openModal('pr_details', pr)} />
       </div>
-    </div>
+
+      {/* Purchase Requests Table */}
+      <div key="prs">
+        <Card className="h-full drag-handle cursor-move">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold">Purchase Requests</h2>
+            <button onClick={() => openModal('PR_MODAL')} className="btn-accent text-xs py-2 px-4 rounded-xl">+ New PR</button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <Table
+              data={purchaseRequests}
+              columns={[
+                { header: 'ID', accessor: 'id', render: (item) => <span className="font-semibold text-[var(--text)]">{item.id}</span> },
+                { header: 'Item', accessor: 'item' },
+                { header: 'Qty', accessor: 'qty' },
+                { header: 'Priority', render: (item) => (
+                  <Badge variant={item.priority === 'urgent' ? 'danger' : 'default'}>{item.priority.toUpperCase()}</Badge>
+                )},
+                { header: 'Status', render: (item) => (
+                  <Badge variant={item.status === 'delivered' ? 'success' : item.status === 'approved' ? 'info' : item.status === 'pending' ? 'warning' : 'default'}>
+                    {item.status.toUpperCase()}
+                  </Badge>
+                )},
+              ]}
+            />
+          </div>
+        </Card>
+      </div>
+
+      {/* Vendor Performance */}
+      <div key="vendors">
+        <Card className="h-full drag-handle cursor-move">
+          <h2 className="text-sm font-semibold mb-4">Vendor Performance</h2>
+          <div className="space-y-4 flex-1 overflow-auto">
+            {vendors.map(v => (
+              <div key={v.id} className="bg-[var(--bg3)] p-4 rounded-2xl border border-[var(--border)]">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <div className="text-sm font-semibold text-[var(--text)]">{v.name}</div>
+                    <div className="text-xs text-[var(--text-muted)]">{v.category}</div>
+                  </div>
+                  <Badge variant={v.onTime > 85 ? 'success' : v.onTime > 70 ? 'warning' : 'danger'}>
+                    {v.onTime}% OTD
+                  </Badge>
+                </div>
+                <ProgressBar progress={v.quality} color={v.quality > 90 ? 'var(--green)' : 'var(--accent)'} size="sm" />
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </DraggableGrid>
   );
 };
 
