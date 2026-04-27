@@ -3,7 +3,9 @@ import { persist } from 'zustand/middleware';
 import type { 
   Project, PurchaseRequest, InspectionRequest, InspectionReport, 
   NCR, ProductionActivity, MaterialRequest, SKU, Tender, Vendor, 
-  ActivityLogItem, RoleId, UserRole, Quotation, Feedback, ERPDocument
+  ActivityLogItem, RoleId, UserRole, Quotation, Feedback, ERPDocument,
+  ProjectDocument, DocumentVersion, CompetitorBid, InternalApproval, ClientActivity,
+  TenderCostEntry, ProposalMapping, ClientHealth, Partner
 } from '../types/erp';
 
 export interface Toast {
@@ -30,8 +32,15 @@ interface NexusState {
   quotations: Quotation[];
   feedback: Feedback[];
   documents: ERPDocument[];
+  projectDocuments: ProjectDocument[];
   vendors: Vendor[];
   activityLog: ActivityLogItem[];
+  competitorBids: CompetitorBid[];
+  internalApprovals: InternalApproval[];
+  clientActivities: ClientActivity[];
+  tenderCosts: TenderCostEntry[];
+  clients: ClientHealth[];
+  partners: Partner[];
   
   // Modal State
   modalOpen: string | null;
@@ -96,12 +105,22 @@ interface NexusState {
   updateIRStatus: (id: string, status: InspectionRequest['status']) => void;
   addNCR: (ncr: NCR) => void;
   addReport: (report: InspectionReport) => void;
+
+  addCompetitorBid: (bid: CompetitorBid) => void;
+  addInternalApproval: (approval: InternalApproval) => void;
+  updateInternalApproval: (id: string, updates: Partial<InternalApproval>) => void;
+  addClientActivity: (activity: ClientActivity) => void;
   
   updateActivityProgress: (id: string, progress: number) => void;
   
   addMR: (mr: MaterialRequest) => void;
   issueMR: (id: string) => void;
   
+  uploadDocumentRevision: (docId: string, version: DocumentVersion) => void;
+
+  addTenderCost: (cost: TenderCostEntry) => void;
+  updateClientHealth: (id: string, updates: Partial<ClientHealth>) => void;
+  generateProposal: (projectId: string) => void;
   _log: (item: Omit<ActivityLogItem, 'id'>) => void;
 }
 
@@ -129,9 +148,9 @@ export const useNexusStore = create<NexusState>()(
   },
 
   projects: [
-    { id: 'p1', title: 'ADNOC Offshore Platform A', client: 'ADNOC Offshore', type: 'EPC', contractValue: 18400000, currency: 'AED', startDate: '2025-01-15', endDate: '2025-08-30', progress: 72, status: 'on-track', pm: 'Ahmed Mansouri', qcLead: 'Priya Nair', procLead: 'Khalid Ibrahim', phases: ['Engineering', 'Procurement', 'Fabrication', 'QAQC', 'Delivery'], currentPhase: 2 },
-    { id: 'p2', title: 'Ruwais Industrial Expansion', client: 'Ruwais Authority', type: 'Civil + MEP', contractValue: 9200000, currency: 'AED', startDate: '2025-03-01', endDate: '2025-10-15', progress: 45, status: 'delayed', pm: 'Ahmed Mansouri', qcLead: 'Priya Nair', procLead: 'Khalid Ibrahim', phases: ['Design', 'Procurement', 'Civil', 'MEP', 'Handover'], currentPhase: 1 },
-    { id: 'p3', title: 'KIZAD Infrastructure Ph.3', client: 'KIZAD Authority', type: 'Fabrication', contractValue: 5700000, currency: 'AED', startDate: '2024-11-01', endDate: '2025-05-20', progress: 91, status: 'near-complete', pm: 'Ahmed Mansouri', qcLead: 'Priya Nair', procLead: 'Khalid Ibrahim', phases: ['Design', 'Procurement', 'Fabrication', 'Inspection', 'Delivery'], currentPhase: 4 }
+    { id: 'p1', title: 'ADNOC Offshore Platform A', client: 'ADNOC Offshore', clientId: 'c1', type: 'EPC', contractValue: 18400000, currency: 'AED', startDate: '2025-01-15', endDate: '2025-08-30', progress: 72, status: 'on-track', pm: 'Ahmed Mansouri', qcLead: 'Priya Nair', procLead: 'Khalid Ibrahim', phases: ['Engineering', 'Procurement', 'Fabrication', 'QAQC', 'Delivery'], currentPhase: 2, acquisitionCost: 245000 },
+    { id: 'p2', title: 'Ruwais Industrial Expansion', client: 'Ruwais Authority', clientId: 'c2', type: 'Civil + MEP', contractValue: 9200000, currency: 'AED', startDate: '2025-03-01', endDate: '2025-10-15', progress: 45, status: 'delayed', pm: 'Ahmed Mansouri', qcLead: 'Priya Nair', procLead: 'Khalid Ibrahim', phases: ['Design', 'Procurement', 'Civil', 'MEP', 'Handover'], currentPhase: 1, acquisitionCost: 110000 },
+    { id: 'p3', title: 'KIZAD Infrastructure Ph.3', client: 'KIZAD Authority', clientId: 'c3', type: 'Fabrication', contractValue: 5700000, currency: 'AED', startDate: '2024-11-01', endDate: '2025-05-20', progress: 91, status: 'near-complete', pm: 'Ahmed Mansouri', qcLead: 'Priya Nair', procLead: 'Khalid Ibrahim', phases: ['Design', 'Procurement', 'Fabrication', 'Inspection', 'Delivery'], currentPhase: 4, acquisitionCost: 45000 }
   ],
 
   purchaseRequests: [
@@ -218,6 +237,53 @@ export const useNexusStore = create<NexusState>()(
     { id: 'DOC-103', title: 'Master Service Agreement', type: 'Contract', category: 'Legal', status: 'Approved', version: 'V1', parentId: 'p1', file: 'MSA-ADNOC.pdf', size: '2.8 MB' }
   ],
 
+  projectDocuments: [
+    {
+      id: 'PDOC-001', category: 'Drawing', title: 'Main Deck Layout',
+      currentVersion: { versionId: 'v3', revisionName: 'Rev B', fileName: 'DWG-Deck-Layout-RevB.dwg', fileSize: '14.2 MB', uploadedAt: '2025-05-18', uploadedBy: 'Sara Al Hashimi', remarks: 'Client-approved IFC issue' },
+      history: [
+        { versionId: 'v2', revisionName: 'Rev A', fileName: 'DWG-Deck-Layout-RevA.dwg', fileSize: '12.4 MB', uploadedAt: '2025-04-10', uploadedBy: 'Sara Al Hashimi', remarks: 'Incorporated client markups from review meeting' },
+        { versionId: 'v1', revisionName: 'Rev 0', fileName: 'DWG-Deck-Layout-Rev0.dwg', fileSize: '11.8 MB', uploadedAt: '2025-03-01', uploadedBy: 'Sara Al Hashimi', remarks: 'Initial issue for client review' }
+      ]
+    },
+    {
+      id: 'PDOC-002', category: 'Specification', title: 'Technical Specifications',
+      currentVersion: { versionId: 'v2', revisionName: 'Rev 1', fileName: 'Technical_Specs_Rev1.pdf', fileSize: '2.4 MB', uploadedAt: '2025-05-12', uploadedBy: 'Sara Al Hashimi', remarks: 'Updated material grades per client P.O.' },
+      history: [
+        { versionId: 'v1', revisionName: 'Rev 0', fileName: 'Technical_Specs_Rev0.pdf', fileSize: '2.1 MB', uploadedAt: '2025-03-15', uploadedBy: 'Sara Al Hashimi', remarks: 'First issue' }
+      ]
+    },
+    {
+      id: 'PDOC-003', category: 'MOM', title: 'Kick-off Meeting Minutes',
+      currentVersion: { versionId: 'v1', revisionName: 'Rev 0', fileName: 'MOM_Kickoff_20250310.pdf', fileSize: '340 KB', uploadedAt: '2025-03-10', uploadedBy: 'Sara Al Hashimi', remarks: 'Approved by PM and client' },
+      history: []
+    },
+    {
+      id: 'PDOC-004', category: 'Contract', title: 'Master Service Agreement',
+      currentVersion: { versionId: 'v1', revisionName: 'V1', fileName: 'MSA-ADNOC-Signed.pdf', fileSize: '2.8 MB', uploadedAt: '2025-01-20', uploadedBy: 'Sara Al Hashimi', remarks: 'Executed copy, signed by both parties' },
+      history: []
+    },
+    {
+      id: 'PDOC-005', category: 'Deviation Request', title: 'Material Substitution — CS to SS',
+      currentVersion: { versionId: 'v2', revisionName: 'DR-02', fileName: 'DevReq-002-Approved.pdf', fileSize: '890 KB', uploadedAt: '2025-05-05', uploadedBy: 'Priya Nair', remarks: 'Client approved substitution with conditions' },
+      history: [
+        { versionId: 'v1', revisionName: 'DR-01', fileName: 'DevReq-001-Draft.pdf', fileSize: '780 KB', uploadedAt: '2025-04-22', uploadedBy: 'Priya Nair', remarks: 'Initial deviation request for client review' }
+      ]
+    },
+    {
+      id: 'PDOC-006', category: 'Approval Copies', title: 'ADNOC Client Approval Pack',
+      currentVersion: { versionId: 'v1', revisionName: 'APC-01', fileName: 'ADNOC-ApprovalPack-IFC.pdf', fileSize: '5.6 MB', uploadedAt: '2025-05-19', uploadedBy: 'Ahmed Mansouri', remarks: 'Stamped IFC drawings + approval transmittal' },
+      history: []
+    },
+    {
+      id: 'PDOC-007', category: 'Scope Additions', title: 'Scope Change Order #1',
+      currentVersion: { versionId: 'v2', revisionName: 'SCO-1 Rev A', fileName: 'SCO-001-RevA-Signed.pdf', fileSize: '1.1 MB', uploadedAt: '2025-05-14', uploadedBy: 'Ahmed Mansouri', remarks: 'Signed variation order — additional structural nodes' },
+      history: [
+        { versionId: 'v1', revisionName: 'SCO-1 Draft', fileName: 'SCO-001-Draft.pdf', fileSize: '980 KB', uploadedAt: '2025-05-01', uploadedBy: 'Sara Al Hashimi', remarks: 'Draft for PM review and client negotiation' }
+      ]
+    }
+  ],
+
   vendors: [
     { id:'V001', name:'Gulf Steel Trading LLC', category:'Structural Steel', contact:'Mohammed Saleh', phone:'+971-2-555-0101', onTime:94, quality:96, active:true, spend:842000, pqs:'ADNOC,TAQA' },
     { id:'V002', name:'Al Fajr Industrial Supply', category:'Pipes & Fittings', contact:'James Wilson', phone:'+971-2-555-0202', onTime:78, quality:82, active:true, spend:340000, pqs:'ADNOC' },
@@ -233,6 +299,41 @@ export const useNexusStore = create<NexusState>()(
     { type:'danger', title:'NCR-042 Raised', text:'Painting defect Zone C — major non-conformance', time:'4 hrs ago', dept:'QAQC' },
     { type:'success', title:'PO-4412 Issued', text:'PO issued to Gulf Steel Trading — AED 184,000', time:'Yesterday', dept:'Purchase' },
     { type:'info', title:'PR-0813 Approved', text:'Carbon Steel Plate 25mm approved by Ahmed M.', time:'2 days ago', dept:'Management' }
+  ],
+
+  competitorBids: [
+    { id: 'cb1', tenderId: 'T-2024-002', competitorName: 'Global EPC Ltd', winningBid: 4200000, reasonForLoss: 'Lead time too long (Offered 18 weeks, we had 24 weeks)', date: '2025-01-15' },
+    { id: 'cb2', tenderId: 'T-2024-004', competitorName: 'Apex Industrial', winningBid: 8900000, reasonForLoss: 'Price (Apex was 8% lower on main equipment)', date: '2025-02-10' },
+  ],
+
+  internalApprovals: [
+    { id: 'ia1', projectId: 'p1', stage: 'Costing', status: 'Approved', requestedBy: 'Ahmed Mansouri', assignedTo: 'Engineering', estimationCost: 3200000, grossMargin: 24.5, remarks: 'Estimation finalized based on latest vendor quotes.', updatedAt: '2025-04-20' },
+    { id: 'ia2', projectId: 'p1', stage: 'Technical', status: 'Pending', requestedBy: 'Ahmed Mansouri', assignedTo: 'Engineering', remarks: 'Under technical review for phase 2 drawings.', updatedAt: '2025-05-15' },
+  ],
+
+  clientActivities: [
+    { id: 'ca1', projectId: 'p1', type: 'Meeting', description: 'Kick-off meeting with ADNOC team to discuss fabrication schedule.', attendees: 'Ahmed, Sara, John (ADNOC)', date: '2025-03-10', performedBy: 'Ahmed Mansouri' },
+    { id: 'ca2', projectId: 'p1', type: 'Email', description: 'Sent revised DWG for Main Deck Layout.', date: '2025-05-18', performedBy: 'Sara Al Hashimi' },
+    { id: 'ca3', projectId: 'p1', type: 'Call', description: 'Discussed technical clarification on material substitution.', date: '2025-05-20', performedBy: 'Ahmed Mansouri' },
+  ],
+
+  tenderCosts: [
+    { id: 'tc1', projectId: 'p1', type: 'Engineering', description: 'Manifold spool technical drafting', amount: 45000, hours: 120, date: '2025-02-10', performedBy: 'John Doe' },
+    { id: 'tc2', projectId: 'p1', type: 'Estimation', description: 'Bulk material take-off (MTO) analysis', amount: 12000, hours: 40, date: '2025-02-15', performedBy: 'Sara Smith' },
+    { id: 'tc3', projectId: 'p1', type: 'Travel', description: 'Site visit to ADNOC offshore facility', amount: 8500, date: '2025-02-20', performedBy: 'Ahmed Mansouri' },
+    { id: 'tc4', projectId: 'p1', type: 'BD', description: 'Tender strategy workshop', amount: 5000, hours: 16, date: '2025-02-25', performedBy: 'Sara Al Hashimi' },
+  ],
+
+  clients: [
+    { clientId: 'c1', clientName: 'ADNOC Offshore', healthScore: 88, winRate: 65, avgPaymentDelay: 42, marginVariance: 4.2, totalValue: 45000000, riskLevel: 'Low' },
+    { clientId: 'c2', clientName: 'Ruwais Authority', healthScore: 42, winRate: 20, avgPaymentDelay: 115, marginVariance: -12.5, totalValue: 12000000, riskLevel: 'High' },
+    { clientId: 'c3', clientName: 'KIZAD Authority', healthScore: 75, winRate: 45, avgPaymentDelay: 60, marginVariance: 2.1, totalValue: 8500000, riskLevel: 'Medium' },
+    { clientId: 'c4', clientName: 'Toxic Global Ltd', healthScore: 15, winRate: 5, avgPaymentDelay: 180, marginVariance: -25.0, totalValue: 1500000, riskLevel: 'Critical' },
+  ],
+
+  partners: [
+    { id: 'part1', name: 'Al Jaber Civil', category: 'Civil', revenueSplit: 40, activeBids: ['p2'] },
+    { id: 'part2', name: 'Schneider Electric', category: 'Electrical', revenueSplit: 25, activeBids: ['p1'] },
   ],
 
   deptEfficiency: [
@@ -429,6 +530,35 @@ export const useNexusStore = create<NexusState>()(
     reports: [report, ...state.reports] 
   })),
 
+  addCompetitorBid: (bid) => set((state) => ({ 
+    competitorBids: [bid, ...state.competitorBids] 
+  })),
+
+  addInternalApproval: (approval) => set((state) => ({ 
+    internalApprovals: [approval, ...state.internalApprovals] 
+  })),
+
+  updateInternalApproval: (id, updates) => set((state) => ({
+    internalApprovals: state.internalApprovals.map(a => a.id === id ? { ...a, ...updates } : a)
+  })),
+
+  addClientActivity: (activity) => set((state) => ({ 
+    clientActivities: [activity, ...state.clientActivities] 
+  })),
+
+  addTenderCost: (cost) => set((state) => ({ 
+    tenderCosts: [cost, ...state.tenderCosts] 
+  })),
+
+  updateClientHealth: (id, updates) => set((state) => ({
+    clients: state.clients.map(c => c.clientId === id ? { ...c, ...updates } : c)
+  })),
+
+  generateProposal: (projectId) => {
+    // Simulated action for now
+    console.log(`Generating proposal for project ${projectId}...`);
+  },
+
   updateActivityProgress: (id, progress) => set((state) => ({
     activities: state.activities.map(a => 
       a.id === id ? { ...a, actual: progress, lastUpdated: 'Just now' } : a
@@ -442,6 +572,14 @@ export const useNexusStore = create<NexusState>()(
   issueMR: (id) => set((state) => ({
     materialRequests: state.materialRequests.map(m => 
       m.id === id ? { ...m, status: 'issued' } : m
+    )
+  })),
+
+  uploadDocumentRevision: (docId, version) => set((state) => ({
+    projectDocuments: state.projectDocuments.map(doc =>
+      doc.id === docId
+        ? { ...doc, currentVersion: version, history: [doc.currentVersion, ...doc.history] }
+        : doc
     )
   })),
 

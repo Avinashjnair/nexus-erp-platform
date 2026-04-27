@@ -12,6 +12,7 @@ export interface Project {
   id: string;
   title: string;
   client: string;
+  clientId: string;
   type: string;
   contractValue: number;
   currency: string;
@@ -24,6 +25,54 @@ export interface Project {
   procLead: string;
   phases: string[];
   currentPhase: number;
+  acquisitionCost?: number; // Total bid cost
+  partnerId?: string; // JV Partner
+}
+
+// ... existing interfaces ...
+
+export interface TenderCostEntry {
+  id: string;
+  projectId: string;
+  type: 'Engineering' | 'Estimation' | 'BD' | 'Travel' | 'Testing' | 'Consulting';
+  description: string;
+  amount: number;
+  hours?: number;
+  date: string;
+  performedBy: string;
+}
+
+export interface ProposalMapping {
+  id: string;
+  projectId: string;
+  sections: {
+    id: string;
+    name: string;
+    source: 'Engineering' | 'Legal' | 'CRM' | 'Finance';
+    status: 'pending' | 'mapped' | 'error';
+    data?: any;
+  }[];
+  generatedAt?: string;
+  version: number;
+}
+
+export interface ClientHealth {
+  clientId: string;
+  clientName: string;
+  healthScore: number; // 1-100
+  winRate: number; // percentage
+  avgPaymentDelay: number; // days
+  marginVariance: number; // percentage
+  totalValue: number;
+  riskLevel: 'Low' | 'Medium' | 'High' | 'Critical';
+}
+
+export interface Partner {
+  id: string;
+  name: string;
+  category: 'Civil' | 'Electrical' | 'Logistics' | 'Specialist';
+  revenueSplit: number; // percentage
+  activeBids: string[]; // project IDs
 }
 
 export interface PurchaseRequest {
@@ -187,4 +236,65 @@ export interface ActivityLogItem {
   text: string;
   time: string;
   dept: string;
+}
+
+export interface VaultDocument {
+  id: string;
+  category: string;
+  mandatory: boolean;
+  file?: File;
+  fileName?: string;
+  revision?: string;
+  remarks?: string;
+  verified: boolean;
+}
+
+export interface DocumentVersion {
+  versionId: string;
+  revisionName: string;
+  fileName: string;
+  fileSize: string;
+  uploadedAt: string;
+  uploadedBy: string;
+  remarks: string;
+}
+
+export interface ProjectDocument {
+  id: string;
+  category: 'Drawing' | 'Specification' | 'MOM' | 'Contract' | 'Deviation Request' | 'Approval Copies' | 'Scope Additions';
+  title: string;
+  currentVersion: DocumentVersion;
+  history: DocumentVersion[];
+}
+
+export interface CompetitorBid {
+  id: string;
+  tenderId: string;
+  competitorName: string;
+  winningBid: number;
+  reasonForLoss: string;
+  date: string;
+}
+
+export interface InternalApproval {
+  id: string;
+  projectId: string;
+  stage: 'Costing' | 'Technical' | 'Commercial' | 'Final';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Revision Required';
+  requestedBy: string;
+  assignedTo: string;
+  estimationCost?: number;
+  grossMargin?: number;
+  remarks: string;
+  updatedAt: string;
+}
+
+export interface ClientActivity {
+  id: string;
+  projectId: string;
+  type: 'Meeting' | 'Email' | 'Call' | 'Visit' | 'Drawing Send';
+  description: string;
+  attendees?: string;
+  date: string;
+  performedBy: string;
 }

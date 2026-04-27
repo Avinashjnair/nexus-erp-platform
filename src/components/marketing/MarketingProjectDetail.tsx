@@ -1,139 +1,209 @@
 import React, { useState } from 'react';
-import { 
-  FileText, Download, FileUp, MessageSquare, 
-  Star, Shield, ArrowLeft, Send
+import {
+  MessageSquare, Star, Shield,
+  ArrowLeft, Send, Trophy, Calculator, Activity,
+  DollarSign, FileText
 } from 'lucide-react';
-import Badge from '../ui/Badge';
+import { useNexusStore } from '../../store/useNexusStore';
+import { useShallow } from 'zustand/react/shallow';
+import type { Project } from '../../types/erp';
+import DocumentHistoryList from './DocumentHistoryList';
+import { CompetitorMatrix } from './CompetitorMatrix';
+import { InternalApprovals } from './InternalApprovals';
+import { MarketingActivityLog } from './MarketingActivityLog';
+import { TenderPNL } from './TenderPNL';
+import { ProposalWizard } from './ProposalWizard';
 
 interface ProjectDetailProps {
-  project: any;
+  project: Project;
   onBack: () => void;
   onSaveFeedback: (feedback: string, rating: number) => void;
 }
 
 const MarketingProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onSaveFeedback }) => {
+  const { projectDocuments } = useNexusStore(useShallow(state => ({
+    projectDocuments: state.projectDocuments
+  })));
   const [feedback, setFeedback] = useState('');
-  const [rating, setRating] = useState(5);
+  const [rating, setRating]     = useState(5);
+  const [activeTab, setActiveTab] = useState<'overview' | 'competitor' | 'approvals' | 'pnl' | 'proposal'>('overview');
 
   return (
     <div className="page-fade-in">
-      <button 
+
+      {/* Back nav */}
+      <button
         onClick={onBack}
-        className="flex-align gap-2 mb-6 text-text-tertiary hover:text-primary transition-colors uppercase text-[11px] font-bold tracking-widest"
+        className="back-btn"
       >
         <ArrowLeft size={14} /> Back to Dashboard
       </button>
 
-      <div className="flex-between mb-8 pb-6" style={{ borderBottom: '1px solid var(--border-ghost)' }}>
+      {/* Project header */}
+      <div className="proj-header">
         <div>
-          <div className="flex-align gap-3 mb-2">
-            <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          <div className="proj-title-row">
+            <h1 className="proj-title">
               {project.title.toUpperCase()}
             </h1>
-            <Badge variant="warning">PHASE: {project.phases[project.currentPhase].toUpperCase()}</Badge>
+            <span className="badge badge-amber">
+              PHASE: {project.phases[project.currentPhase]?.toUpperCase()}
+            </span>
           </div>
-          <p className="text-xs text-text-tertiary font-mono">
+          <p className="proj-meta">
             PROJECT_ID: {project.id.toUpperCase()} | CLIENT: {project.client.toUpperCase()}
           </p>
         </div>
-        <div className="text-right">
-          <div className="text-[10px] uppercase font-bold opacity-40 mb-1">Project Status</div>
-          <div className="text-sm font-bold" style={{ color: 'var(--warning)' }}>IN PROGRESS</div>
+        <div className="proj-status-block">
+          <div className="proj-status-label">
+            Project Status
+          </div>
+          <div className="proj-status-value">IN PROGRESS</div>
         </div>
       </div>
 
-      <div className="grid-2 gap-6">
-        {/* Drawings & Specifications Vault */}
-        <div className="card" style={{ background: 'var(--bg-deep)', border: '1px solid var(--border-ghost)' }}>
-          <div className="card-header flex-between mb-6">
-            <h2 className="card-title flex-align gap-2 text-[12px] uppercase tracking-wider">
-              <Shield size={16} style={{ color: 'var(--primary)' }} />
-              Drawings & Specifications
-            </h2>
-            <button className="btn-premium" style={{ padding: '6px 12px', fontSize: '10px' }}>
-              <FileUp size={12} /> UPLOAD
-            </button>
+      {/* Tab Navigation */}
+      <div className="flex gap-4 mb-6 border-b border-border">
+        <button 
+          className={`pb-2 px-1 text-sm font-semibold transition-colors relative ${activeTab === 'overview' ? 'text-neon-blue' : 'text-text-secondary hover:text-text-primary'}`}
+          onClick={() => setActiveTab('overview')}
+        >
+          <div className="flex items-center gap-2">
+            <Shield size={14} /> Overview & Documents
           </div>
-          
-          <div className="flex-column gap-3">
-            {[
-              { name: 'Main_Blueprint_V2.dwg', size: '12.4 MB', type: 'CAD' },
-              { name: 'Technical_Specs_Final.pdf', size: '2.1 MB', type: 'PDF' },
-              { name: 'Structural_Analysis_Q3.xlsx', size: '840 KB', type: 'XLSX' }
-            ].map((doc, i) => (
-              <div key={i} className="flex-between p-3 rounded" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-ghost)' }}>
-                <div className="flex-align gap-3">
-                  <div className="p-2 rounded bg-bg-deep" style={{ color: 'var(--primary)' }}>
-                    <FileText size={16} />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold">{doc.name}</div>
-                    <div className="text-[10px] opacity-50 uppercase font-mono">{doc.type} | {doc.size}</div>
+          {activeTab === 'overview' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-neon-blue shadow-[0_0_8px_var(--neon-blue)]"></div>}
+        </button>
+        <button 
+          className={`pb-2 px-1 text-sm font-semibold transition-colors relative ${activeTab === 'competitor' ? 'text-amber-400' : 'text-text-secondary hover:text-text-primary'}`}
+          onClick={() => setActiveTab('competitor')}
+        >
+          <div className="flex items-center gap-2">
+            <Trophy size={14} /> Competitor Matrix
+          </div>
+          {activeTab === 'competitor' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-400 shadow-[0_0_8px_var(--amber-400)]"></div>}
+        </button>
+        <button 
+          className={`pb-2 px-1 text-sm font-semibold transition-colors relative ${activeTab === 'approvals' ? 'text-indigo-400' : 'text-text-secondary hover:text-text-primary'}`}
+          onClick={() => setActiveTab('approvals')}
+        >
+          <div className="flex items-center gap-2">
+            <Calculator size={14} /> Internal Approvals
+          </div>
+          {activeTab === 'approvals' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-400 shadow-[0_0_8px_var(--indigo-400)]"></div>}
+        </button>
+        <button 
+          className={`pb-2 px-1 text-sm font-semibold transition-colors relative ${activeTab === 'pnl' ? 'text-red-400' : 'text-text-secondary hover:text-text-primary'}`}
+          onClick={() => setActiveTab('pnl')}
+        >
+          <div className="flex items-center gap-2">
+            <DollarSign size={14} /> Tender P&L
+          </div>
+          {activeTab === 'pnl' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-400 shadow-[0_0_8px_var(--red-400)]"></div>}
+        </button>
+        <button 
+          className={`pb-2 px-1 text-sm font-semibold transition-colors relative ${activeTab === 'proposal' ? 'text-green-400' : 'text-text-secondary hover:text-text-primary'}`}
+          onClick={() => setActiveTab('proposal')}
+        >
+          <div className="flex items-center gap-2">
+            <FileText size={14} /> Proposal Assembler
+          </div>
+          {activeTab === 'proposal' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-400 shadow-[0_0_8px_var(--green-400)]"></div>}
+        </button>
+      </div>
+
+      {activeTab === 'overview' && (
+        <>
+          {/* Document Vault */}
+          <div className="card gap-b2" style={{ marginBottom: '16px' }}>
+            <div className="card-header">
+              <div>
+                <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Shield size={15} style={{ color: 'var(--violet-2)' }} />
+                  Project Document Vault
+                </div>
+                <div className="card-sub">
+                  Full revision history · Click <strong style={{ color: 'var(--text-2)' }}>History</strong> to expand prior versions
+                </div>
+              </div>
+              <div className="proj-status-block" style={{ fontSize: '10px', color: 'var(--text-3)' }}>
+                <div style={{ fontWeight: 700 }}>{projectDocuments.length} documents</div>
+                <div style={{ marginTop: '2px' }}>
+                  {projectDocuments.reduce((sum, d) => sum + d.history.length, 0)} total revisions
+                </div>
+              </div>
+            </div>
+
+            <DocumentHistoryList documents={projectDocuments} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Customer Feedback Loop */}
+            <div className="card h-full">
+              <div className="card-header">
+                <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <MessageSquare size={15} style={{ color: 'var(--neon)' }} />
+                  Customer Feedback Loop
+                </div>
+              </div>
+
+              <div className="feedback-box">
+                <div style={{ marginBottom: '16px' }}>
+                  <label className="form-label">Active Intelligence Rating</label>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setRating(s)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', transition: 'transform 0.12s' }}
+                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.2)')}
+                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                      >
+                        <Star
+                          size={20}
+                          fill={s <= rating ? 'var(--violet-2)' : 'transparent'}
+                          stroke={s <= rating ? 'var(--violet-2)' : 'var(--text-3)'}
+                        />
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <button className="action-btn-sm">
-                  <Download size={14} />
+
+                <div style={{ marginBottom: '16px' }}>
+                  <label className="form-label">Intelligence Commentary</label>
+                  <textarea
+                    value={feedback}
+                    onChange={e => setFeedback(e.target.value)}
+                    className="form-textarea"
+                    placeholder="Enter client feedback, adjustments, or strategic concerns…"
+                    style={{ minHeight: '100px', marginTop: '6px' }}
+                  />
+                </div>
+
+                <button
+                  className="btn btn-primary"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => { onSaveFeedback(feedback, rating); setFeedback(''); }}
+                >
+                  <Send size={14} /> Save Transmission
                 </button>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Customer Feedback Loop */}
-        <div className="card" style={{ background: 'var(--bg-deep)', border: '1px solid var(--border-ghost)' }}>
-          <div className="card-header mb-6">
-            <h2 className="card-title flex-align gap-2 text-[12px] uppercase tracking-wider">
-              <MessageSquare size={16} style={{ color: 'var(--secondary)' }} />
-              Customer Feedback Loop
-            </h2>
-          </div>
-
-          <div className="p-5 rounded" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-ghost)' }}>
-            <div className="mb-4">
-              <label className="text-[10px] uppercase font-bold opacity-40 mb-2 block tracking-widest">Active Intelligence Rating</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <button 
-                    key={s} 
-                    onClick={() => setRating(s)}
-                    className="transition-transform hover:scale-110"
-                  >
-                    <Star 
-                      size={18} 
-                      fill={s <= rating ? 'var(--primary)' : 'transparent'} 
-                      stroke={s <= rating ? 'var(--primary)' : 'var(--text-tertiary)'} 
-                    />
-                  </button>
-                ))}
-              </div>
+              <p className="feedback-hint">
+                All feedback is timestamped and synced with the Project Lifecycle.
+              </p>
             </div>
 
-            <div className="mb-4">
-              <label className="text-[10px] uppercase font-bold opacity-40 mb-2 block tracking-widest">Intelligence Commentary</label>
-              <textarea 
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                className="w-full bg-bg-deep border border-border-ghost rounded p-3 text-sm text-text-primary outline-none focus:border-primary transition-colors min-h-[100px]"
-                placeholder="Enter client feedback, adjustments, or strategic concerns..."
-              />
-            </div>
+            {/* Client Activity Log */}
+            <MarketingActivityLog projectId={project.id} />
+          </div>
+        </>
+      )}
 
-            <button 
-              className="btn-premium w-full justify-center"
-              onClick={() => {
-                onSaveFeedback(feedback, rating);
-                setFeedback('');
-              }}
-            >
-              <Send size={16} /> SAVE TRANSMISSION
-            </button>
-          </div>
-          
-          <div className="mt-4 p-3 rounded italic text-[11px] text-text-tertiary text-center opacity-60">
-            Note: All feedback is timestamped and synced with the Project Lifecycle.
-          </div>
-        </div>
-      </div>
+      {activeTab === 'competitor' && <CompetitorMatrix tenderId={project.id === 'p1' ? 'TND-2501' : project.id} />}
+      {activeTab === 'approvals' && <InternalApprovals projectId={project.id} />}
+      {activeTab === 'pnl' && <TenderPNL projectId={project.id} contractValue={project.contractValue} />}
+      {activeTab === 'proposal' && <ProposalWizard projectId={project.id} />}
+
     </div>
   );
 };

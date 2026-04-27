@@ -3,10 +3,10 @@ import { useNexusStore } from '../store/useNexusStore';
 import Table from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import ProgressBar from '../components/ui/ProgressBar';
-import DocumentVault, { VaultDocument } from '../components/ui/DocumentVault';
+import DocumentVault from '../components/ui/DocumentVault';
 import { PlusCircle, CheckCircle, ShieldCheck, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
-import type { Project } from '../types/erp';
+import type { Project, VaultDocument } from '../types/erp';
 
 const WBS_PHASES = [
   // ... (keeping existing WBS_PHASES)

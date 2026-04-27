@@ -1,17 +1,9 @@
 import React, { useState } from 'react';
-import { Upload, CheckCircle, FileText, AlertCircle, Trash2 } from 'lucide-react';
+import { Upload, CheckCircle, FileText, Trash2 } from 'lucide-react';
 import DocumentMetadataModal from '../modals/DocumentMetadataModal';
+import type { VaultDocument } from '../../types/erp';
 
-export interface VaultDocument {
-  id: string;
-  category: string;
-  mandatory: boolean;
-  file?: File;
-  fileName?: string;
-  revision?: string;
-  remarks?: string;
-  verified: boolean;
-}
+export type { VaultDocument };
 
 interface DocumentVaultProps {
   documents: VaultDocument[];
