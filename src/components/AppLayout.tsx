@@ -13,6 +13,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="nexus-app">
+      {/* Background Depth Layer */}
+      <div className="fixed inset-0 pointer-events-none opacity-20" 
+           style={{ 
+             background: `radial-gradient(circle at 0% 0%, var(--violet-dim) 0%, transparent 50%), 
+                          radial-gradient(circle at 100% 100%, var(--neon-dim) 0%, transparent 50%)` 
+           }} 
+      />
       <Sidebar />
       <div className="content-area">
         <Topbar />

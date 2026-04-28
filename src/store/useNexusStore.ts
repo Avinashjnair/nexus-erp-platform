@@ -482,7 +482,13 @@ export const useNexusStore = create<NexusState>()(
     notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
   })),
   setCurrentProject: (id) => set({ currentProject: id }),
-  login: (role) => set((state) => ({ currentUser: state.roles[role], currentRole: role })),
+  login: (role) => set((state) => {
+    const user = state.roles[role];
+    return { 
+      currentUser: { ...user, role }, 
+      currentRole: role 
+    };
+  }),
   logout: () => set({ currentUser: null }),
   openModal: (id, data = null) => set({ modalOpen: id, modalData: data }),
   closeModal: () => set({ modalOpen: null, modalData: null }),
