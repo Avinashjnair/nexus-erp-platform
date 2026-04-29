@@ -29,6 +29,8 @@ interface NexusState {
   materialRequests: MaterialRequest[];
   inventory: SKU[];
   activeStoreSection: 'dashboard' | 'inventory' | 'inbound' | 'outbound' | 'audit';
+  activeQAQCSection: 'dashboard' | 'itp' | 'ncr' | 'docs';
+  activeProductionSection: 'dashboard' | 'gantt' | 'spools' | 'dpr';
   tenders: Tender[];
   quotations: Quotation[];
   feedback: Feedback[];
@@ -119,6 +121,8 @@ interface NexusState {
   
   uploadDocumentRevision: (docId: string, version: DocumentVersion) => void;
   setStoreSection: (section: 'dashboard' | 'inventory' | 'inbound' | 'outbound' | 'audit') => void;
+  setQAQCSection: (section: 'dashboard' | 'itp' | 'ncr' | 'docs') => void;
+  setProductionSection: (section: 'dashboard' | 'gantt' | 'spools' | 'dpr') => void;
   addTenderCost: (cost: TenderCostEntry) => void;
   updateClientHealth: (id: string, updates: Partial<ClientHealth>) => void;
   generateProposal: (projectId: string) => void;
@@ -127,7 +131,7 @@ interface NexusState {
 
 export const useNexusStore = create<NexusState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
   currentUser: null,
   currentRole: 'management',
   currentProject: 'p1',
@@ -135,6 +139,8 @@ export const useNexusStore = create<NexusState>()(
   modalData: null,
   toasts: [],
   activeStoreSection: 'dashboard',
+  activeQAQCSection: 'dashboard',
+  activeProductionSection: 'dashboard',
 
   roles: {
     management: { role: 'management', name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' },
@@ -504,15 +510,27 @@ export const useNexusStore = create<NexusState>()(
     projects: [project, ...state.projects] 
   })),
 
-  addPR: (pr) => set((state) => ({ 
-    purchaseRequests: [pr, ...state.purchaseRequests] 
-  })),
+  addPR: (pr) => {
+    set((state) => ({ purchaseRequests: [pr, ...state.purchaseRequests] }));
+    get().addNotification({
+      type: 'info',
+      title: 'New PR Raised',
+      text: `${pr.id} requested by ${pr.dept}. Value assessment required.`
+    });
+    get()._log({ type: 'info', title: 'PR Raised', text: pr.item, time: 'Just now', dept: pr.dept });
+  },
 
-  approvePR: (id) => set((state) => ({
-    purchaseRequests: state.purchaseRequests.map(p => 
-      p.id === id ? { ...p, status: 'approved' } : p
-    )
-  })),
+  approvePR: (id) => {
+    set((state) => ({
+      purchaseRequests: state.purchaseRequests.map(p => p.id === id ? { ...p, status: 'approved' } : p)
+    }));
+    get().addNotification({
+      type: 'success',
+      title: 'PR Approved',
+      text: `${id} has been approved by Management. Proceeding to PO.`
+    });
+    get()._log({ type: 'success', title: 'PR Approved', text: id, time: 'Just now', dept: 'Management' });
+  },
 
   rejectPR: (id) => set((state) => ({
     purchaseRequests: state.purchaseRequests.map(p => 
@@ -530,9 +548,15 @@ export const useNexusStore = create<NexusState>()(
     )
   })),
 
-  addNCR: (ncr) => set((state) => ({ 
-    ncrs: [ncr, ...state.ncrs] 
-  })),
+  addNCR: (ncr) => {
+    set((state) => ({ ncrs: [ncr, ...state.ncrs] }));
+    get().addNotification({
+      type: 'error',
+      title: `NCR RAISED: ${ncr.severity.toUpperCase()}`,
+      text: `Activity halted on ${ncr.project}. Ref: ${ncr.id}`
+    });
+    get()._log({ type: 'danger', title: 'NCR Logged', text: ncr.activity, time: 'Just now', dept: 'QAQC' });
+  },
 
   addReport: (report) => set((state) => ({ 
     reports: [report, ...state.reports] 
@@ -607,6 +631,8 @@ export const useNexusStore = create<NexusState>()(
   })),
 
   setStoreSection: (section) => set({ activeStoreSection: section }),
+  setQAQCSection: (section) => set({ activeQAQCSection: section }),
+  setProductionSection: (section) => set({ activeProductionSection: section }),
 }), {
   name: 'nexus-erp-store',
   partialize: (state) => Object.fromEntries(

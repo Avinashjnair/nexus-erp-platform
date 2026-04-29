@@ -12,6 +12,7 @@ import WorkflowPage from './pages/WorkflowPage';
 import ReportsPage from './pages/ReportsPage';
 import InitiatePage from './pages/InitiatePage';
 import StrategicDashboard from './pages/StrategicDashboard';
+import ActivityDigestPage from './pages/ActivityDigestPage';
 import ModalManager from './components/modals/ModalManager';
 import ToastContainer from './components/ui/ToastContainer';
 
@@ -48,6 +49,7 @@ const App: React.FC = () => {
       case 'reports':     return <ReportsPage />;
       case 'initiate':    return <InitiatePage />;
       case 'strategic':   return <StrategicDashboard />;
+      case 'digest':      return <ActivityDigestPage />;
       default:            return <ManagementPage />;
     }
   };

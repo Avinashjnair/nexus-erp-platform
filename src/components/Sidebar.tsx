@@ -3,7 +3,7 @@ import { useNexusStore } from '../store/useNexusStore';
 import {
   LayoutDashboard, ClipboardCheck, ShoppingCart, Factory,
   Warehouse, TrendingUp, FileText, GitBranch, PlusCircle, LogOut, ChevronLeft, ShieldCheck,
-  Box, ArrowDownToLine, ArrowUpFromLine, History
+  Box, ArrowDownToLine, ArrowUpFromLine, History, Kanban, FileBadge, CalendarClock, Settings, ClipboardList, Activity
 } from 'lucide-react';
 import type { RoleId } from '../types/erp';
 import { ROLE_PERMISSIONS } from '../config/permissions';
@@ -12,10 +12,25 @@ const NAV = [
   { id: 'management', label: 'Management',  Icon: LayoutDashboard, section: 'CORE' },
   { id: 'strategic',  label: 'Strategic View', Icon: ShieldCheck,     section: 'CORE' },
   { id: 'initiate',   label: 'New Project', Icon: PlusCircle,      section: 'CORE' },
+  { id: 'digest',     label: 'Daily Digest', Icon: Activity,       section: 'CORE' },
   { id: 'marketing',  label: 'Marketing',   Icon: TrendingUp,      section: 'MODULES' },
   { id: 'purchase',   label: 'Purchase',    Icon: ShoppingCart,    section: 'MODULES' },
-  { id: 'qaqc',       label: 'QA / QC',     Icon: ClipboardCheck,  section: 'MODULES' },
-  { id: 'production', label: 'Production',  Icon: Factory,         section: 'MODULES' },
+  { id: 'qaqc',       label: 'QA / QC',     Icon: ClipboardCheck,  section: 'MODULES',
+    subItems: [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'itp',       label: 'ITP Tracker', icon: ClipboardCheck },
+      { id: 'ncr',       label: 'NCR Kanban', icon: Kanban },
+      { id: 'docs',      label: 'Document Register', icon: FileBadge },
+    ]
+  },
+  { id: 'production', label: 'Production',  Icon: Factory,         section: 'MODULES',
+    subItems: [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'gantt',     label: 'Master Schedule', icon: CalendarClock },
+      { id: 'spools',    label: 'Spool Tracker', icon: Settings },
+      { id: 'dpr',       label: 'Log DPR', icon: ClipboardList },
+    ]
+  },
   { id: 'store',      label: 'Store',       Icon: Warehouse,       section: 'MODULES',
     subItems: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,7 +45,12 @@ const NAV = [
 ];
 
 const Sidebar: React.FC = () => {
-  const { currentRole, currentUser, setRole, logout, activeStoreSection, setStoreSection } = useNexusStore();
+  const { 
+    currentRole, currentUser, setRole, logout, 
+    activeStoreSection, setStoreSection,
+    activeQAQCSection, setQAQCSection,
+    activeProductionSection, setProductionSection 
+  } = useNexusStore();
   const [collapsed, setCollapsed] = useState(false);
 
   // Visibility is based on the user's initial role (login role)
@@ -83,6 +103,46 @@ const Sidebar: React.FC = () => {
                             key={sub.id}
                             className={`sidebar-sublink${isSubActive ? ' active' : ''}`}
                             onClick={() => setStoreSection(sub.id)}
+                          >
+                            <SubIcon size={14} opacity={isSubActive ? 1 : 0.5} />
+                            <span>{sub.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Sub-items for QAQC */}
+                  {id === 'qaqc' && currentRole === 'qaqc' && !collapsed && (NAV.find(n => n.id === 'qaqc') as any).subItems && (
+                    <div className="sidebar-subnav animate-fade-in" style={{ paddingLeft: '32px', marginBottom: '8px' }}>
+                      {(NAV.find(n => n.id === 'qaqc') as any).subItems.map((sub: any) => {
+                        const SubIcon = sub.icon;
+                        const isSubActive = activeQAQCSection === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            className={`sidebar-sublink${isSubActive ? ' active' : ''}`}
+                            onClick={() => setQAQCSection(sub.id)}
+                          >
+                            <SubIcon size={14} opacity={isSubActive ? 1 : 0.5} />
+                            <span>{sub.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Sub-items for Production */}
+                  {id === 'production' && currentRole === 'production' && !collapsed && (NAV.find(n => n.id === 'production') as any).subItems && (
+                    <div className="sidebar-subnav animate-fade-in" style={{ paddingLeft: '32px', marginBottom: '8px' }}>
+                      {(NAV.find(n => n.id === 'production') as any).subItems.map((sub: any) => {
+                        const SubIcon = sub.icon;
+                        const isSubActive = activeProductionSection === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            className={`sidebar-sublink${isSubActive ? ' active' : ''}`}
+                            onClick={() => setProductionSection(sub.id)}
                           >
                             <SubIcon size={14} opacity={isSubActive ? 1 : 0.5} />
                             <span>{sub.label}</span>
