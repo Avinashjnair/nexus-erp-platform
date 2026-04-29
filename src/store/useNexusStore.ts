@@ -28,6 +28,7 @@ interface NexusState {
   activities: ProductionActivity[];
   materialRequests: MaterialRequest[];
   inventory: SKU[];
+  activeStoreSection: 'dashboard' | 'inventory' | 'inbound' | 'outbound' | 'audit';
   tenders: Tender[];
   quotations: Quotation[];
   feedback: Feedback[];
@@ -117,7 +118,7 @@ interface NexusState {
   issueMR: (id: string) => void;
   
   uploadDocumentRevision: (docId: string, version: DocumentVersion) => void;
-
+  setStoreSection: (section: 'dashboard' | 'inventory' | 'inbound' | 'outbound' | 'audit') => void;
   addTenderCost: (cost: TenderCostEntry) => void;
   updateClientHealth: (id: string, updates: Partial<ClientHealth>) => void;
   generateProposal: (projectId: string) => void;
@@ -133,6 +134,7 @@ export const useNexusStore = create<NexusState>()(
   modalOpen: null,
   modalData: null,
   toasts: [],
+  activeStoreSection: 'dashboard',
 
   roles: {
     management: { role: 'management', name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' },
@@ -602,7 +604,9 @@ export const useNexusStore = create<NexusState>()(
 
   removeToast: (id) => set((state) => ({
     toasts: state.toasts.filter(t => t.id !== id)
-  }))
+  })),
+
+  setStoreSection: (section) => set({ activeStoreSection: section }),
 }), {
   name: 'nexus-erp-store',
   partialize: (state) => Object.fromEntries(

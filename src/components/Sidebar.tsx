@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNexusStore } from '../store/useNexusStore';
 import {
   LayoutDashboard, ClipboardCheck, ShoppingCart, Factory,
-  Warehouse, TrendingUp, FileText, GitBranch, PlusCircle, LogOut, ChevronLeft, ShieldCheck
+  Warehouse, TrendingUp, FileText, GitBranch, PlusCircle, LogOut, ChevronLeft, ShieldCheck,
+  Box, ArrowDownToLine, ArrowUpFromLine, History
 } from 'lucide-react';
 import type { RoleId } from '../types/erp';
 import { ROLE_PERMISSIONS } from '../config/permissions';
@@ -15,13 +16,21 @@ const NAV = [
   { id: 'purchase',   label: 'Purchase',    Icon: ShoppingCart,    section: 'MODULES' },
   { id: 'qaqc',       label: 'QA / QC',     Icon: ClipboardCheck,  section: 'MODULES' },
   { id: 'production', label: 'Production',  Icon: Factory,         section: 'MODULES' },
-  { id: 'store',      label: 'Store',       Icon: Warehouse,       section: 'MODULES' },
+  { id: 'store',      label: 'Store',       Icon: Warehouse,       section: 'MODULES',
+    subItems: [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'inventory', label: 'Inventory Master', icon: Box },
+      { id: 'inbound',   label: 'Inbound (GRN)', icon: ArrowDownToLine },
+      { id: 'outbound',  label: 'Outbound (Issues)', icon: ArrowUpFromLine },
+      { id: 'audit',     label: 'Movement Audit', icon: History },
+    ]
+  },
   { id: 'workflow',   label: 'Workflow',    Icon: GitBranch,       section: 'ANALYTICS' },
   { id: 'reports',    label: 'Reports',     Icon: FileText,        section: 'ANALYTICS' },
 ];
 
 const Sidebar: React.FC = () => {
-  const { currentRole, currentUser, setRole, logout } = useNexusStore();
+  const { currentRole, currentUser, setRole, logout, activeStoreSection, setStoreSection } = useNexusStore();
   const [collapsed, setCollapsed] = useState(false);
 
   // Visibility is based on the user's initial role (login role)
@@ -53,15 +62,36 @@ const Sidebar: React.FC = () => {
             <div key={sec}>
               {!collapsed && <div className="sidebar-section-label">{sec}</div>}
               {items.map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  className={`sidebar-link${currentRole === id ? ' active' : ''}`}
-                  onClick={() => setRole(id as RoleId)}
-                  title={collapsed ? label : undefined}
-                >
-                  <span className="sidebar-link-icon"><Icon size={16} /></span>
-                  {!collapsed && <span className="sidebar-link-text">{label}</span>}
-                </button>
+                <React.Fragment key={id}>
+                  <button
+                    className={`sidebar-link${currentRole === id ? ' active' : ''}`}
+                    onClick={() => setRole(id as RoleId)}
+                    title={collapsed ? label : undefined}
+                  >
+                    <span className="sidebar-link-icon"><Icon size={16} /></span>
+                    {!collapsed && <span className="sidebar-link-text">{label}</span>}
+                  </button>
+                  
+                  {/* Sub-items for Store */}
+                  {id === 'store' && currentRole === 'store' && !collapsed && (NAV.find(n => n.id === 'store') as any).subItems && (
+                    <div className="sidebar-subnav animate-fade-in" style={{ paddingLeft: '32px', marginBottom: '8px' }}>
+                      {(NAV.find(n => n.id === 'store') as any).subItems.map((sub: any) => {
+                        const SubIcon = sub.icon;
+                        const isSubActive = activeStoreSection === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            className={`sidebar-sublink${isSubActive ? ' active' : ''}`}
+                            onClick={() => setStoreSection(sub.id)}
+                          >
+                            <SubIcon size={14} opacity={isSubActive ? 1 : 0.5} />
+                            <span>{sub.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </div>
           );
