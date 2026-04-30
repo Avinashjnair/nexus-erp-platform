@@ -3,14 +3,14 @@ import { useNexusStore } from '../store/useNexusStore';
 import StatCard from '../components/ui/StatCard';
 import Badge from '../components/ui/Badge';
 import { 
-  ClipboardCheck, ShieldAlert, FileBadge, Kanban, LayoutDashboard, 
+  ClipboardCheck, ShieldAlert, FileBadge, Kanban,
   CheckCircle, AlertTriangle, Clock, Search, Filter, ArrowRight, ShieldCheck, Activity
 } from 'lucide-react';
 
 const QAQCPage: React.FC = () => {
   const { 
-    inspectionRequests, ncrs, quality, addToast, 
-    activeQAQCSection, setQAQCSection 
+    inspectionRequests, ncrs, quality, addToast,
+    activeQAQCSection
   } = useNexusStore();
 
   const pendingIRs = (inspectionRequests || []).filter(ir => ir.status === 'scheduled' || ir.status === 'pending').length;

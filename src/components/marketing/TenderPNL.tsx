@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNexusStore } from '../../store/useNexusStore';
 import { useShallow } from 'zustand/react/shallow';
-import { DollarSign, Clock, AlertTriangle, TrendingUp, Plus } from 'lucide-react';
+import { DollarSign, AlertTriangle, TrendingUp, Plus } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 
 interface TenderPNLProps {

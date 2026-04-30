@@ -83,6 +83,7 @@ const InitiatePage: React.FC = () => {
       id: `p${projects.length + 1}`,
       title: form.title,
       client: form.client,
+      clientId: `c${projects.length + 1}`,
       type: form.type,
       contractValue: parseFloat(form.contractValue) || 0,
       currency: 'AED',

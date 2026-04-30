@@ -6,11 +6,6 @@ import type { PurchaseRequest } from '../../types/erp';
 
 interface Props { isOpen: boolean; onClose: () => void; pr: PurchaseRequest | null; }
 
-const PRIORITY_COLOR: Record<string, string> = {
-  urgent:   'var(--red)',
-  normal:   'var(--blue)',
-  critical: 'var(--amber)',
-};
 
 const STATUS_COLOR: Record<string, string> = {
   pending:    'var(--amber)',

@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { 
-  Project, PurchaseRequest, InspectionRequest, InspectionReport, 
-  NCR, ProductionActivity, MaterialRequest, SKU, Tender, Vendor, 
+import type {
+  Project, PurchaseRequest, InspectionRequest, InspectionReport,
+  NCR, ProductionActivity, MaterialRequest, SKU, Tender, Vendor,
   ActivityLogItem, RoleId, UserRole, Quotation, Feedback, ERPDocument,
   ProjectDocument, DocumentVersion, CompetitorBid, InternalApproval, ClientActivity,
-  TenderCostEntry, ProposalMapping, ClientHealth, Partner
+  TenderCostEntry, ClientHealth, Partner, ModalPayload
 } from '../types/erp';
 
 export interface Toast {
@@ -46,8 +46,8 @@ interface NexusState {
   partners: Partner[];
   
   // Modal State
-  modalOpen: string | null;
-  modalData: any;
+  modalOpen: ModalPayload['type'] | null;
+  modalData: ModalPayload['data'] | null;
 
   // Toast State
   toasts: Toast[];
@@ -91,7 +91,7 @@ interface NexusState {
   setCurrentProject: (id: string) => void;
   login: (role: RoleId) => void;
   logout: () => void;
-  openModal: (id: string, data?: any) => void;
+  openModal: <T extends ModalPayload>(type: T['type'], data?: T['data']) => void;
   closeModal: () => void;
   
   addToast: (message: string, type: Toast['type'], duration?: number) => void;
@@ -152,7 +152,8 @@ export const useNexusStore = create<NexusState>()(
     workflow:   { role: 'workflow', name: 'System Automator', initials: 'SA', title: 'Workflow Engine', color: '#14b8a6' },
     reports:    { role: 'reports', name: 'Data Analyst', initials: 'DA', title: 'Intelligence Lead', color: '#4f7cff' },
     initiate:   { role: 'initiate', name: 'Ahmed Mansouri', initials: 'AM', title: 'Project Manager', color: '#e8a020' },
-    strategic:  { role: 'strategic', name: 'Data Analyst', initials: 'DA', title: 'Intelligence Lead', color: '#4f7cff' }
+    strategic:  { role: 'strategic', name: 'Data Analyst', initials: 'DA', title: 'Intelligence Lead', color: '#4f7cff' },
+    digest:     { role: 'digest', name: 'System Monitor', initials: 'SM', title: 'Activity Monitor', color: '#06b6d4' }
   },
 
   projects: [
@@ -498,7 +499,7 @@ export const useNexusStore = create<NexusState>()(
     };
   }),
   logout: () => set({ currentUser: null }),
-  openModal: (id, data = null) => set({ modalOpen: id, modalData: data }),
+  openModal: (type, data = null) => set({ modalOpen: type, modalData: data }),
   closeModal: () => set({ modalOpen: null, modalData: null }),
 
   // Helper for activity log

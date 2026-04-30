@@ -1,14 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useNexusStore } from '../store/useNexusStore';
-import StatCard from '../components/ui/StatCard';
-import Badge from '../components/ui/Badge';
-import { 
-  BarChart3, PieChart, Activity, Filter, Calendar, 
-  Download, TrendingDown, Target, ShieldAlert, DollarSign
+import {
+  PieChart, Activity, Filter, Calendar,
+  Download, Target, ShieldAlert, DollarSign
 } from 'lucide-react';
 
 const ReportsPage: React.FC = () => {
-  const { projects, costVariance, quality, ncrs, projectControls, deptEfficiency, addToast } = useNexusStore();
+  const { projects, costVariance, quality, projectControls, deptEfficiency, addToast } = useNexusStore();
   
   // Global Filters State
   const [selectedProject, setSelectedProject] = useState<string>('all');

@@ -6,7 +6,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area
 } from 'recharts';
 import { 
-  Folder, DollarSign, Clock, AlertTriangle, Zap, 
+  Folder, Clock, AlertTriangle, Zap,
   CheckCircle, XCircle, TrendingUp, Package, ShieldCheck
 } from 'lucide-react';
 import Badge from '../components/ui/Badge';
@@ -131,7 +131,7 @@ const ManagementPage: React.FC = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {financialDistribution.map((entry, index) => (
+                    {financialDistribution.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -509,7 +509,7 @@ const ManagementPage: React.FC = () => {
             <div className="flex-col justify-center items-center">
               <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--neon)' }}>{engineering.releaseAdherence}%</div>
               <div className="stat-label">Design Release Adherence</div>
-              <Badge variant="neon" size="xs" style={{ marginTop: 8 }}>ON TARGET</Badge>
+              <Badge variant="neon" style={{ marginTop: 8 }}>ON TARGET</Badge>
             </div>
           </div>
         </div>

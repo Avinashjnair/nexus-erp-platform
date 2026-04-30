@@ -2,9 +2,9 @@ import React from 'react';
 import { useNexusStore } from '../store/useNexusStore';
 import Badge from '../components/ui/Badge';
 import { 
-  Box, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, 
-  ScanLine, History, Truck, Activity, MapPin, Navigation,
-  Search, Filter, Plus, Layers
+  Box, AlertTriangle, ArrowDownToLine, ArrowUpFromLine,
+  ScanLine, Truck, Activity, MapPin, Navigation,
+  Search, Filter, Plus
 } from 'lucide-react';
 
 const MOCK_DELIVERIES = [

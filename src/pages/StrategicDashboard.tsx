@@ -6,7 +6,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { 
-  TrendingUp, Package, Download, Filter, Maximize2, AlertCircle, 
+  TrendingUp, Package, Download, Maximize2, AlertCircle,
   ArrowUpRight, ArrowDownRight, Activity
 } from 'lucide-react';
 import Badge from '../components/ui/Badge';
@@ -129,7 +129,7 @@ const StrategicDashboard: React.FC = () => {
                   <div key={risk.id} className="vendor-card" style={{ margin: 0, flexDirection: 'column', alignItems: 'flex-start' }}>
                     <div className="flex-between" style={{ width: '100%', marginBottom: 4 }}>
                       <span style={{ fontWeight: 700, color: 'var(--text-0)' }}>{risk.id}</span>
-                      <Badge variant="danger" size="xs">MAJOR</Badge>
+                      <Badge variant="danger">MAJOR</Badge>
                     </div>
                     <p style={{ fontSize: 10, color: 'var(--text-3)', margin: '4px 0' }}>{risk.description}</p>
                     <div className="flex-between" style={{ width: '100%', marginTop: 4 }}>
@@ -190,7 +190,7 @@ const StrategicDashboard: React.FC = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {vendorSpend.map((entry, index) => (
+                    {vendorSpend.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>

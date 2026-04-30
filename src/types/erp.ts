@@ -1,4 +1,15 @@
-export type RoleId = 'management' | 'marketing' | 'purchase' | 'qaqc' | 'production' | 'store' | 'workflow' | 'reports' | 'initiate' | 'strategic';
+export type RoleId = 'management' | 'marketing' | 'purchase' | 'qaqc' | 'production' | 'store' | 'workflow' | 'reports' | 'initiate' | 'strategic' | 'digest';
+
+// Discriminated union for all modal payloads — prevents unsafe `any` casts
+export type ModalPayload =
+  | { type: 'PR_MODAL'; data: null }
+  | { type: 'IR_MODAL'; data: null }
+  | { type: 'SETTINGS_MODAL'; data: null }
+  | { type: 'NEW_TRANSACTION_MODAL'; data: null }
+  | { type: 'VIEW_PR_MODAL'; data: PurchaseRequest }
+  | { type: 'VIEW_NCR'; data: NCR }
+  | { type: 'UPLOAD_REVISION_MODAL'; data: ProjectDocument }
+  | { type: 'DOCUMENT_METADATA_MODAL'; data: ERPDocument };
 
 export interface UserRole {
   role: RoleId;

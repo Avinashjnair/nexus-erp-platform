@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNexusStore } from '../../store/useNexusStore';
-import { FileText, CheckCircle2, AlertCircle, Clock, ChevronRight, Download, Send } from 'lucide-react';
+import { FileText, CheckCircle2, AlertCircle, Clock, Download, Send } from 'lucide-react';
 import Badge from '../ui/Badge';
 
 interface ProposalWizardProps {
@@ -8,8 +8,8 @@ interface ProposalWizardProps {
 }
 
 export const ProposalWizard: React.FC<ProposalWizardProps> = ({ projectId }) => {
-  const [activeStep, setActiveStep] = useState(1);
-  const [mappings, setMappings] = useState([
+  const [_activeStep, _setActiveStep] = useState(1);
+  const [mappings, _setMappings] = useState([
     { id: 'm1', name: 'Technical Scope', source: 'Engineering', status: 'mapped', data: '12-Page Fabrication Spec' },
     { id: 'm2', name: 'Commercial Estimation', source: 'Engineering', status: 'mapped', data: 'AED 18.4M Total' },
     { id: 'm3', name: 'Legal Terms & Conditions', source: 'Legal', status: 'pending' },

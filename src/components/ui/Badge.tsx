@@ -5,6 +5,7 @@ interface BadgeProps {
   variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'accent' | 'lime' | 'ghost' | 'neon' | 'blue' | 'green' | 'red' | 'amber' | 'teal' | 'orange' | 'violet' | 'gray';
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const variantMap: Record<string, string> = {
@@ -27,9 +28,9 @@ const variantMap: Record<string, string> = {
   gray: 'badge-gray',
 };
 
-const Badge: React.FC<BadgeProps> = ({ variant = 'default', children, className }) => {
+const Badge: React.FC<BadgeProps> = ({ variant = 'default', children, className, style }) => {
   return (
-    <span className={cn('badge', variantMap[variant] || `badge-${variant}`, className)}>
+    <span className={cn('badge', variantMap[variant] || `badge-${variant}`, className)} style={style}>
       {children}
     </span>
   );
