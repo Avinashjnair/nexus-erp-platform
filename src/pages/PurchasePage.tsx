@@ -9,7 +9,7 @@ import Badge from '../components/ui/Badge';
 import {
   ShoppingCart, Clock, CheckCircle, AlertCircle, Plus, Search,
 } from 'lucide-react';
-import { formatCurrency, formatStatus } from '../utils/formatters';
+import { formatStatus } from '../utils/formatters';
 import type { PurchaseRequest } from '../types/erp';
 
 const PurchasePage: React.FC = () => {

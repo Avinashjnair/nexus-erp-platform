@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNexusStore } from '../store/useNexusStore';
 import Badge from '../components/ui/Badge';
-import { 
-  Activity, Filter, Calendar, AlertTriangle, 
+import {
+  Filter, Calendar, AlertTriangle,
   CheckCircle, Info, ShieldAlert, LayoutDashboard
 } from 'lucide-react';
 

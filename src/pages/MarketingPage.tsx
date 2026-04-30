@@ -18,7 +18,7 @@ const STATUS_BADGE: Record<string, 'ghost' | 'info' | 'success' | 'danger'> = {
 };
 
 const MarketingPage: React.FC = () => {
-  const { tenders, vendors, projects, addToast, addNotification } = useNexusStore();
+  const { tenders, projects, addToast, addNotification } = useNexusStore();
   const [filter, setFilter] = useState<string>('all');
   const [selectedTenderId, setSelectedTenderId] = useState<string | null>(null);
 
@@ -109,7 +109,7 @@ const MarketingPage: React.FC = () => {
         <MarketingProjectDetail
           project={selectedProject}
           onBack={() => setSelectedTenderId(null)}
-          onSaveFeedback={(fb, rating) => {
+          onSaveFeedback={(_fb, rating) => {
             addNotification({ type: 'success', title: 'Feedback Saved', text: `Client feedback (${rating}★) recorded for ${selectedProject.client}` });
             addToast('Client feedback saved successfully', 'success');
           }}

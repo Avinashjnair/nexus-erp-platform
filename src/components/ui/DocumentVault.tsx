@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, CheckCircle, FileText, Trash2 } from 'lucide-react';
+import { Upload, CheckCircle, Trash2 } from 'lucide-react';
 import DocumentMetadataModal from '../modals/DocumentMetadataModal';
 import type { VaultDocument } from '../../types/erp';
 

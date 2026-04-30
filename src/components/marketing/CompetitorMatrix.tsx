@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNexusStore } from '../../store/useNexusStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Search, Trophy, TrendingDown, Clock } from 'lucide-react';
+import { Trophy, TrendingDown } from 'lucide-react';
 
 interface CompetitorMatrixProps {
   tenderId: string;

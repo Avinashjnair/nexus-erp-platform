@@ -3,8 +3,8 @@ import { useNexusStore } from '../store/useNexusStore';
 import StatCard from '../components/ui/StatCard';
 import Badge from '../components/ui/Badge';
 import { 
-  Factory, CalendarClock, Settings, ClipboardList, LayoutDashboard, 
-  AlertTriangle, CheckCircle, Clock, Wrench, HardHat, FileText
+  Factory, CalendarClock, Settings,
+  AlertTriangle, CheckCircle, Wrench, HardHat, FileText
 } from 'lucide-react';
 
 const ProductionPage: React.FC = () => {

@@ -16,5 +16,6 @@ export const ROLE_PERMISSIONS: Record<RoleId, RoleId[]> = {
   strategic:  ['strategic', 'reports'],
   workflow:   ['workflow', 'reports'],
   reports:    ['reports'],
-  initiate:   ['initiate', 'reports']
+  initiate:   ['initiate', 'reports'],
+  digest:     ['digest']
 };

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh pr create --title 'feat\\(priority-1\\): API service layer, TanStack Query, real auth & error boundaries' --body ' *)",
+      "Bash(git commit -m 'chore: update claude settings *)"
+    ]
+  }
+}

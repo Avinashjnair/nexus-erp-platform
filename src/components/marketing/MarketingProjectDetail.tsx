@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   MessageSquare, Star, Shield,
-  ArrowLeft, Send, Trophy, Calculator, Activity,
+  ArrowLeft, Send, Trophy, Calculator,
   DollarSign, FileText
 } from 'lucide-react';
 import { useNexusStore } from '../../store/useNexusStore';

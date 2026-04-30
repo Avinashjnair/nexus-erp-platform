@@ -15,18 +15,33 @@ import StrategicDashboard from './pages/StrategicDashboard';
 import ActivityDigestPage from './pages/ActivityDigestPage';
 import ModalManager from './components/modals/ModalManager';
 import ToastContainer from './components/ui/ToastContainer';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import type { RoleId } from './types/erp';
+
+const PAGE_MAP: Record<RoleId, React.ReactElement> = {
+  management: <ManagementPage />,
+  purchase:   <PurchasePage />,
+  qaqc:       <QAQCPage />,
+  store:      <StorePage />,
+  production: <ProductionPage />,
+  marketing:  <MarketingPage />,
+  workflow:   <WorkflowPage />,
+  reports:    <ReportsPage />,
+  initiate:   <InitiatePage />,
+  strategic:  <StrategicDashboard />,
+  digest:     <ActivityDigestPage />,
+};
 
 const App: React.FC = () => {
   const { currentUser, currentRole, projectControls, addNotification } = useNexusStore();
 
   useEffect(() => {
-    // Neural Alert System: Monitor KPIs
     const timer = setTimeout(() => {
       if (projectControls.spi < 0.85) {
         addNotification({
           type: 'error',
           title: 'NEURAL ALERT: Schedule Variance',
-          text: `Project P2 SPI has dropped to ${projectControls.spi}. Immediate intervention recommended.`
+          text: `Project P2 SPI has dropped to ${projectControls.spi}. Immediate intervention recommended.`,
         });
       }
     }, 3000);
@@ -37,26 +52,16 @@ const App: React.FC = () => {
     return <LoginPage />;
   }
 
-  const renderContent = () => {
-    switch (currentRole) {
-      case 'management':  return <ManagementPage />;
-      case 'purchase':    return <PurchasePage />;
-      case 'qaqc':        return <QAQCPage />;
-      case 'store':       return <StorePage />;
-      case 'production':  return <ProductionPage />;
-      case 'marketing':   return <MarketingPage />;
-      case 'workflow':    return <WorkflowPage />;
-      case 'reports':     return <ReportsPage />;
-      case 'initiate':    return <InitiatePage />;
-      case 'strategic':   return <StrategicDashboard />;
-      case 'digest':      return <ActivityDigestPage />;
-      default:            return <ManagementPage />;
-    }
-  };
+  const page = PAGE_MAP[currentRole] ?? PAGE_MAP.management;
+  const moduleName = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
 
   return (
     <>
-      <AppLayout>{renderContent()}</AppLayout>
+      <AppLayout>
+        <ErrorBoundary moduleName={moduleName}>
+          {page}
+        </ErrorBoundary>
+      </AppLayout>
       <ModalManager />
       <ToastContainer />
     </>

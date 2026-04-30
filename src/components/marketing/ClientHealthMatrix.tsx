@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNexusStore } from '../../store/useNexusStore';
 import { useShallow } from 'zustand/react/shallow';
-import { TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 export const ClientHealthMatrix: React.FC = () => {
   const clients = useNexusStore(useShallow(state => state.clients));
@@ -49,7 +49,7 @@ export const ClientHealthMatrix: React.FC = () => {
           <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-border/40"></div>
 
           {/* Clients as Points */}
-          {clients.map((client, idx) => {
+          {clients.map((client) => {
             // Mapping score to position
             const left = `${client.winRate}%`;
             const bottom = `${client.healthScore}%`;

@@ -2,7 +2,6 @@ import React from 'react';
 import { TrendingUp, Trophy, DollarSign, Clock } from 'lucide-react';
 import StatCard from '../ui/StatCard';
 import { formatCurrency } from '../../utils/formatters';
-import type { Tender } from '../../types/erp';
 
 interface MarketingStatsProps {
   activeCount: number;
